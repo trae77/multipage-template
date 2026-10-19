@@ -51,6 +51,17 @@ Re-sync presets/themes from client-site-templates: `npm run presets -- /path/to/
 
 There are 28 trade presets: the 20 library categories plus the original one-pager trades (pressure-washing, landscaping, plumbing, cleaning-service, restaurant, auto-detailing, handyman, generic-business).
 
+## Home layouts and hero styles (spec v4 A3/A4)
+
+Optional. When neither is set, the home page keeps its original order. The main roofing demo leaves them unset.
+
+- `layout` in site.config.json (or `--layout`): one of the `LAYOUTS` ids vendored from client-site-templates `tools/design.mjs` (`tools/design.vendor.mjs`), or `"auto"` for the industry default. It sets the home section order (hero first, contact last). An unknown id falls back to the industry default with a warning. Sections with no data (e.g. hours, team) are skipped, not invented.
+- `hero` (or `--hero`): `split`, `centered`, `media`, `search`, `schedule`, `menu-first`, `portfolio`, `proof` or `emergency`. It overrides the layout's hero.
+- `heroImage` (or `--hero-image`): the client's own photo for `media`/`portfolio` heroes. Use an https URL or a relative path. Without one, a labeled CSS placeholder is shown. `proof` only lists credentials that are set (`business.license`, `business.brokerage`, `business.years`).
+- The build fails (exit 4) if hero text is under 4.5:1 against the hero background.
+
+Industry demos: restaurant `rest-order`/`menu-first`, fitness `fit-schedule`/`schedule`, real-estate `re-search`/`search`, photography `photo-portfolio`/`portfolio`, salon-barber `salon-book`/`centered`, dental-medical `care-visit`/`centered` (button "Request a Visit").
+
 ## Main-action page per industry (spec v2)
 
 `presets/industries.json` picks each trade's main-action page. It becomes the header button and the third button on the mobile action bar (Call · Text · action). Override it with `actionPage` / `actionLabel` in `site.config.json` or `--action`.

@@ -5,6 +5,7 @@
 // Options: --config site.config.json --trade roofing --theme premium-dark --out dir --site-url https://...
 import { schemaType, parseHoursJson } from './schema.vendor.mjs';
 import { PALETTES, resolveDesign, fontLinks, fontCss } from './design.vendor.mjs';
+import { resolveHome, homeBody, HERO_CSS } from './home.mjs';
 import fs from 'node:fs'; import path from 'node:path'; import url from 'node:url';
 import { md, esc } from '../src/md.mjs';
 const ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
@@ -33,13 +34,15 @@ const OUT = path.resolve(ROOT, opt('out', DEMO ? 'dist-demo' : 'dist'));
 const siteUrl = (opt('site-url', cfg.siteUrl) || '').replace(/\/$/, '');
 const B = cfg.business; const F = { ...(cfg.features || {}) };
 const ACTION = opt('action', cfg.actionPage) || ['book', 'order', 'schedule', 'listings', 'packages'].find((k) => IND[k].includes(tradeKey)) || 'quote';
-const ACTION_LABEL = cfg.actionLabel || IND.labels[ACTION];
+const ACTION_LABEL = cfg.actionLabel || (tradeKey === 'dental-medical' ? 'Request a Visit' : IND.labels[ACTION]);
 // Medical: no portal on this stack (no HIPAA BAA). Link to the practice's own patient portal instead.
 const MEDICAL = IND.portalOff.includes(tradeKey); if (MEDICAL) F.portal = false;
 const SQUARE = /^https:\/\//.test(cfg.ordering?.squareUrl || '') ? cfg.ordering.squareUrl : '';
 // Opt-in design system (client-site-templates spec v4 A1/A2): --palette auto|<id>, --fonts auto|<id> (or cfg.palette / cfg.fonts).
 const PALETTE = resolveDesign('palette', opt('palette', cfg.palette), tradeKey, tradeKey);
 const FONTS = resolveDesign('fonts', opt('fonts', cfg.fonts), tradeKey, tradeKey);
+// Opt-in home layout + hero (spec v4 A3/A4): --layout auto|<id>, --hero <id>, --hero-image (or cfg.layout / cfg.hero / cfg.heroImage).
+const HOME = resolveHome(cfg, opt, resolveDesign, tradeKey);
 const primary = cfg.colors?.primary || (PALETTE && PALETTES[PALETTE].primary) || trade.colors?.primary || '#1e3a8a';
 const accent = cfg.colors?.accent || (PALETTE && PALETTES[PALETTE].accent) || trade.colors?.accent || '#f59e0b';
 const dark = THEMES[themeKey].dark;
@@ -54,6 +57,11 @@ const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - 
 const onColor = (bg) => (contrast(bg, '#ffffff') >= contrast(bg, '#0f172a') ? '#ffffff' : '#0f172a');
 const readable = (fg, bg) => { let c = fg; for (let i = 0; i < 20 && contrast(c, bg) < 4.5; i++) c = mix(c, lum(bg) > 0.5 ? '#000000' : '#ffffff', 0.15); return c; };
 for (const [w, fg, bg] of [['CTA label on accent', onColor(accent), accent], ['label on primary', onColor(primary), primary]]) if (contrast(fg, bg) < 4.5) { console.error(`✗ Contrast check failed: ${w} ${fg} on ${bg} = ${contrast(fg, bg).toFixed(2)}:1 (needs 4.5)`); process.exit(4); }
+if (HOME) { // hero text contrast (spec v4 A3): text color vs both ends of the hero gradient; media/scrim heroes: white on the darkest overlay
+  const heroText = onColor(mix(primary, '#000000', 0.2)); const deep = mix(primary, '#000000', 0.45);
+  const pairs = HOME.hero === 'media' ? [['hero text on media scrim', '#ffffff', deep]] : [['hero text on hero start', heroText, deep], ['hero text on hero end', heroText, primary]];
+  for (const [w, fg, bg] of pairs) if (contrast(fg, bg) < 4.5) { console.error(`✗ Contrast check failed: ${w} ${fg} on ${bg} = ${contrast(fg, bg).toFixed(2)}:1 (needs 4.5)`); process.exit(4); }
+}
 const pageBg = dark ? '#0b0f17' : '#ffffff';
 const vars = `:root{--brand-primary:${primary};--brand-accent:${accent};--accent:${readable(accent, pageBg)};--on-accent:${onColor(accent)};--on-primary:${onColor(primary)};--link:${readable(primary, dark ? '#131a26' : '#f8fafc')};--hero-tint:${mix(primary, '#ffffff', 0.9)};--hero-deep:${mix(primary, '#000000', 0.45)};--border-strong:${dark ? 'rgba(255,255,255,.25)' : 'rgba(15,23,42,.3)'};--focus:${dark ? '#93c5fd' : '#1d4ed8'}}`;
 // Theme CSS assumes one-pager markup; header text color needs to stay readable with our header.
@@ -142,13 +150,13 @@ ${DEMO ? `<script>window.SEED=${JSON.stringify(content).replace(/</g, '\\u003c')
 }
 
 fs.rmSync(OUT, { recursive: true, force: true }); fs.mkdirSync(path.join(OUT, 'assets'), { recursive: true });
-fs.writeFileSync(path.join(OUT, 'assets/site.css'), css);
+fs.writeFileSync(path.join(OUT, 'assets/site.css'), css + (HOME ? HERO_CSS + `:root{--hero-text:${onColor(mix(primary, '#000000', 0.2))}}` : ''));
 for (const f of ['app.js', 'md.js', 'slots.js']) fs.copyFileSync(path.join(ROOT, 'src/public', f), path.join(OUT, 'assets', f));
 if (DEMO) fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
 const label = trade.label;
 const cityLine = B.city ? ` in ${B.city}${B.region ? ', ' + B.region : ''}` : '';
 
-page('', { title: 'Home', page: 'home', description: `${B.name}: ${label}${cityLine}. Request a quote, book a visit, or log in to see your project.`, body: (pre) => `
+page('', { title: 'Home', page: 'home', description: `${B.name}: ${label}${cityLine}. Request a quote, book a visit, or log in to see your project.`, body: (pre) => HOME ? homeBody(pre, HOME, { B, F, services, content, label, cityLine, tel, ACTION, ACTION_LABEL, head, projectCard, reviewCard, tile, sampleTag }) : `
 <section class="hero"><div class="wrap"><span class="hero-badge">${esc(label)}${esc(cityLine)}</span>
 <h1 data-content="headline">${esc(B.tagline || B.name)}</h1><p data-content="intro">${esc(`${B.name} offers ${services.map((s) => s.name.toLowerCase()).join(', ')}${cityLine}.`)}</p>
 <div class="btn-row"><a class="btn" href="${pre}${ACTION}/">${esc(ACTION_LABEL)}</a><a class="btn btn-ghost" href="${tel}">Call ${esc(B.phone)}</a>${F.booking !== false ? `<a class="btn btn-ghost" href="${pre}book/">Book a visit</a>` : ''}</div></div></section>
@@ -253,5 +261,5 @@ page('admin/', { title: 'Owner dashboard', page: 'admin', noindex: true, descrip
 
 fs.writeFileSync(path.join(OUT, 'robots.txt'), DEMO ? 'User-agent: *\nDisallow: /\n' : `User-agent: *\nDisallow: /login/\nDisallow: /portal/\nDisallow: /admin/\nDisallow: /api/\n${siteUrl ? `Sitemap: ${siteUrl}/sitemap.xml\n` : ''}`);
 fs.writeFileSync(path.join(OUT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemap.map((r) => `  <url><loc>${esc(`${siteUrl}/${r}`)}</loc></url>`).join('\n')}\n</urlset>\n`);
-fs.writeFileSync(path.join(OUT, 'build.json'), JSON.stringify({ mode: DEMO ? 'demo' : 'api', trade: tradeKey, theme: themeKey, pages: sitemap.length }, null, 2));
+fs.writeFileSync(path.join(OUT, 'build.json'), JSON.stringify({ mode: DEMO ? 'demo' : 'api', trade: tradeKey, theme: themeKey, layout: HOME?.layout || null, hero: HOME?.hero || null, heroImage: HOME?.heroImage || null, pages: sitemap.length }, null, 2));
 console.log(`Built ${DEMO ? 'demo' : 'server'} site → ${path.relative(ROOT, OUT)} (trade ${tradeKey}, theme ${themeKey}, ${sitemap.length} indexed pages)`);

@@ -144,6 +144,9 @@ async function hydrate() {
 
 const pages = {
   gallery() {},
+  listings() { const q = (new URLSearchParams(location.search).get('q') || '').trim().toLowerCase(); if (!q) return;
+    $$('main .grid > .card').forEach((c) => { c.hidden = !c.textContent.toLowerCase().includes(q); });
+    $('main .grid').insertAdjacentHTML('beforebegin', `<p class="hint wrap" role="status">Showing listings matching “${esc(q)}”. <a href="./">Show all</a></p>`); },
   quote() {
     const form = $('#quote-form'); const sum = $('#quote-summary');
     const render = () => { const d = formData(form); sum.innerHTML = [['Service', d.service], ['Size', d.size || 'Not given'], ['Condition', d.condition], ['Timing', d.when]].map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join(''); };

@@ -37,7 +37,7 @@ class ApiStore {
 }
 
 // ------------------------------------------------------------------ Demo store (localStorage)
-const DEMO_KEY = 'mp_demo_v1';
+const DEMO_KEY = 'mp_demo_v1_' + (SITE.trade || 'site');
 function seedDemo() {
   const S = window.SEED || {}; const cust = 'u_customer';
   const d = (n) => { const x = new Date(); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };
@@ -101,8 +101,30 @@ const store = SITE.mode === 'demo' ? new DemoStore() : new ApiStore();
 window.MP_STORE = store;
 
 // ------------------------------------------------------------------ shared UI
-const navBtn = $('.nav-toggle');
-if (navBtn) navBtn.addEventListener('click', () => { const open = $('#site-nav').classList.toggle('open'); navBtn.setAttribute('aria-expanded', String(open)); });
+// Menu sheet: labeled button, focus trap, Escape and Close return focus to the button.
+const menuBtn = $('.menu-btn'); const sheet = $('#menu-sheet');
+const focusables = (el) => $$('a[href],button:not([disabled]),input,select,textarea', el).filter((x) => x.offsetParent !== null);
+function closeMenu() { sheet.hidden = true; menuBtn.setAttribute('aria-expanded', 'false'); document.body.style.overflow = ''; menuBtn.focus(); }
+if (menuBtn && sheet) {
+  menuBtn.addEventListener('click', () => { sheet.hidden = false; menuBtn.setAttribute('aria-expanded', 'true'); document.body.style.overflow = 'hidden'; $('.menu-close', sheet).focus(); });
+  $('.menu-close', sheet).addEventListener('click', closeMenu);
+  sheet.addEventListener('keydown', (e) => { if (e.key === 'Escape') return closeMenu(); if (e.key !== 'Tab') return; const f = focusables(sheet); const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); } else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); } });
+  sheet.addEventListener('click', (e) => { if (e.target.closest('nav a')) sheet.hidden = true; });
+}
+// Gallery: category filter chips + lightbox (dialog, keyboard prev/next).
+function initGallery() {
+  const grid = $('[data-gallery]'); if (!grid) return; const dlg = $('#lightbox'); let idx = 0;
+  const cards = () => $$('.card', grid).filter((c) => !c.hidden);
+  const open = (i) => { const list = cards(); idx = (i + list.length) % list.length; const c = list[idx]; const after = $('.ba-after img, .ba-after .ph-tile', c) || $('img, .ph-tile', c);
+    $('.lightbox-body', dlg).innerHTML = (after ? after.outerHTML : '') + `<h2 style="font-size:1.2rem">${esc($('h3', c)?.textContent || '')}</h2>`; if (!dlg.open) dlg.showModal(); };
+  $$('.card', grid).forEach((c) => { if ($('.zoom', c)) return; c.insertAdjacentHTML('beforeend', `<button type="button" class="btn btn-ghost zoom">View larger<span class="sr-only">: ${esc($('h3', c)?.textContent || 'photo')}</span></button>`); });
+  grid.addEventListener('click', (e) => { const z = e.target.closest('.zoom'); if (z) open(cards().indexOf(z.closest('.card'))); });
+  $('[data-close]', dlg).onclick = () => dlg.close(); $('[data-prev]', dlg).onclick = () => open(idx - 1); $('[data-next]', dlg).onclick = () => open(idx + 1);
+  dlg.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') open(idx + 1); if (e.key === 'ArrowLeft') open(idx - 1); });
+  document.addEventListener('click', (e) => { const chip = e.target.closest('.chip[data-cat]'); if (!chip) return; $$('.chip[data-cat]').forEach((x) => x.setAttribute('aria-pressed', String(x === chip)));
+    $$('.card', grid).forEach((c) => { c.hidden = !!chip.dataset.cat && c.dataset.cat !== chip.dataset.cat; }); });
+}
 document.addEventListener('input', (e) => { if (e.target.matches('[data-ba]')) e.target.closest('.ba').style.setProperty('--split', e.target.value + '%'); });
 const setStatus = (form, msg, err) => { const s = $('.status', form); s.textContent = msg; s.classList.toggle('err', !!err); };
 const formData = (form) => Object.fromEntries(new FormData(form).entries());
@@ -115,12 +137,36 @@ async function hydrate() {
   let c; try { c = await store.getContent(); } catch { return; }
   for (const el of $$('[data-content]')) { const v = c.site?.[el.dataset.content]; if (v) el.innerHTML = el.dataset.content === 'about' ? md(v) : esc(v); }
   for (const el of $$('[data-list="projects"]')) { if (!c.projects?.length) continue; const list = c.projects.slice(0, Number(el.dataset.limit) || 99);
-    el.innerHTML = list.map((p) => `<article class="card"><div class="ba" style="--split:50%"><div class="ba-layer">${p.before ? `<img src="${esc(p.before)}" alt="Before: ${esc(p.title)}">` : '<div class="ph-tile" role="img" aria-label="Sample before photo"><span>Sample before photo</span></div>'}</div><div class="ba-layer ba-after">${p.after ? `<img src="${esc(p.after)}" alt="After: ${esc(p.title)}">` : '<div class="ph-tile after" role="img" aria-label="Sample after photo"><span>Sample after photo</span></div>'}</div><span class="ba-line" aria-hidden="true"></span><label class="sr-only" for="ba-${esc(p.id)}">Before and after comparison for ${esc(p.title)}</label><input id="ba-${esc(p.id)}" type="range" min="0" max="100" value="50" data-ba></div><h3 style="margin-top:1rem">${sample(p)}${esc(p.title)}</h3><p>${esc(p.city || '')}</p><p>${esc(p.summary || '')}</p></article>`).join(''); }
+    el.innerHTML = list.map((p) => `<article class="card" data-cat="${esc(p.category || '')}"><div class="ba" style="--split:50%"><div class="ba-layer">${p.before ? `<img src="${esc(p.before)}" alt="Before: ${esc(p.title)}">` : '<div class="ph-tile" role="img" aria-label="Sample before photo"><span>Sample before photo</span></div>'}</div><div class="ba-layer ba-after">${p.after ? `<img src="${esc(p.after)}" alt="After: ${esc(p.title)}">` : '<div class="ph-tile after" role="img" aria-label="Sample after photo"><span>Sample after photo</span></div>'}</div><span class="ba-line" aria-hidden="true"></span><label class="sr-only" for="ba-${esc(p.id)}">Before and after comparison for ${esc(p.title)}</label><input id="ba-${esc(p.id)}" type="range" min="0" max="100" value="50" data-ba></div><h3 style="margin-top:1rem">${sample(p)}${esc(p.title)}</h3><p>${esc(p.city || '')}</p><p>${esc(p.summary || '')}</p></article>`).join(''); }
   for (const el of $$('[data-list="posts"]')) { if (!c.posts?.length) continue;
     el.innerHTML = [...c.posts].sort((a, b) => String(b.date).localeCompare(a.date)).map((p) => `<article class="card">${sample(p)}<h3><a href="${ROOT}blog/post/?slug=${encodeURIComponent(p.slug)}">${esc(p.title)}</a></h3><p><time datetime="${esc(p.date)}">${esc(p.date)}</time></p><p>${esc(p.excerpt || '')}</p></article>`).join(''); }
 }
 
 const pages = {
+  gallery() {},
+  quote() {
+    const form = $('#quote-form'); const sum = $('#quote-summary');
+    const render = () => { const d = formData(form); sum.innerHTML = [['Service', d.service], ['Size', d.size || 'Not given'], ['Condition', d.condition], ['Timing', d.when]].map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join(''); };
+    form.addEventListener('input', render); form.addEventListener('change', render); render();
+    form.addEventListener('submit', async (e) => { e.preventDefault(); const d = formData(form);
+      $$('[required]', form).forEach((i) => i.setAttribute('aria-invalid', String(!i.value.trim())));
+      if (!d.name.trim() || !d.phone.trim()) return setStatus(form, 'Name and phone are required.', true);
+      const message = `Quote request. Size: ${d.size || 'n/a'}. Condition: ${d.condition}. Timing: ${d.when}.${d.notes ? ' Notes: ' + d.notes : ''}`;
+      try { await store.createLead({ kind: 'quote', name: d.name, phone: d.phone, email: d.email, service: d.service, address: d.address, message }); form.reset(); render(); setStatus(form, SITE.mode === 'demo' ? 'Thanks! (Demo: saved to the owner dashboard in this browser.)' : 'Thanks! We will send your price soon.'); } catch (err) { setStatus(form, err.message, true); } });
+  },
+  order() {
+    const cart = []; const ul = $('#cart'); const form = $('#order-form');
+    const draw = () => { ul.innerHTML = cart.length ? cart.map((c, i) => `<li><span>${c.qty} × ${esc(c.name)}${c.opt ? ` (${esc(c.opt)})` : ''}</span><span><button type="button" data-dec="${i}" aria-label="Remove one ${esc(c.name)}">−</button> <button type="button" data-inc="${i}" aria-label="Add one ${esc(c.name)}">+</button></span></li>`).join('') : '<li class="hint">Nothing added yet.</li>'; };
+    document.addEventListener('click', (e) => { const a = e.target.closest('[data-add]'); if (a) { const opt = $('#opt-' + a.dataset.add)?.value || ''; const ex = cart.find((c) => c.id === a.dataset.add && c.opt === opt); ex ? ex.qty++ : cart.push({ id: a.dataset.add, name: a.dataset.name, opt, qty: 1 }); draw(); }
+      const inc = e.target.dataset?.inc, dec = e.target.dataset?.dec; if (inc !== undefined) { cart[inc].qty++; draw(); } if (dec !== undefined) { if (--cart[dec].qty <= 0) cart.splice(dec, 1); draw(); } });
+    const t = new Date(); t.setMinutes(Math.ceil(t.getMinutes() / 15) * 15 + 30, 0, 0); const times = ['As soon as possible'];
+    for (let i = 0; i < 16; i++) { times.push(t.toTimeString().slice(0, 5)); t.setMinutes(t.getMinutes() + 15); }
+    form.pickup.innerHTML = times.map((x) => `<option>${x}</option>`).join('');
+    form.addEventListener('submit', async (e) => { e.preventDefault(); const d = formData(form);
+      if (!cart.length) return setStatus(form, 'Add at least one item.', true); if (!d.name.trim() || !d.phone.trim()) return setStatus(form, 'Name and phone are required.', true);
+      const message = `Pickup order for ${d.pickup}: ` + cart.map((c) => `${c.qty} x ${c.name}${c.opt ? ' (' + c.opt + ')' : ''}`).join(', ') + (d.notes ? `. Notes: ${d.notes}` : '');
+      try { await store.createLead({ kind: 'order', name: d.name, phone: d.phone, service: 'Pickup order', message }); cart.length = 0; draw(); form.reset(); setStatus(form, SITE.mode === 'demo' ? 'Order request sent. (Demo: saved to the owner dashboard in this browser.)' : 'Order request sent. We will text or call to confirm.'); } catch (err) { setStatus(form, err.message, true); } });
+  },
   async 'post-dynamic'() {
     const slug = new URLSearchParams(location.search).get('slug'); const c = await store.getContent(); const p = (c.posts || []).find((x) => x.slug === slug);
     $('#post-title').textContent = p ? p.title : 'Post not found'; $('#post-date').textContent = p?.date || ''; $('#post-body').innerHTML = p ? md(p.body) : ''; if (p) document.title = p.title + ' | ' + SITE.name;
@@ -203,7 +249,7 @@ const CUSTOMER = {
 const OWNER = {
   async overview(p) { const [l, b, q, i] = await Promise.all([store.listLeads(), store.listBookings(), store.listQuotes(), store.listInvoices()]);
     p.innerHTML = `<div class="stats"><div class="stat"><b>${l.filter((x) => x.status === 'new').length}</b>New leads</div><div class="stat"><b>${b.filter((x) => x.status === 'pending').length}</b>Bookings to confirm</div><div class="stat"><b>${q.filter((x) => x.status === 'sent').length}</b>Quotes out</div><div class="stat"><b>${money(i.filter((x) => x.status !== 'paid').reduce((t, x) => t + x.amount, 0))}</b>Unpaid invoices</div></div><h2>Latest leads</h2>` + table(['Name', 'Service', 'Status'], l.slice(0, 5).map((x) => `<tr><td>${esc(x.name)}</td><td>${esc(x.service || '')}</td><td>${pill(x.status)}</td></tr>`)); },
-  async leads(p, r) { const l = await store.listLeads(); p.innerHTML = '<h2 style="margin-top:0">Leads inbox</h2>' + table(['Received', 'Contact', 'Request', 'Status'], l.map((x) => `<tr><td>${esc(new Date(x.created).toLocaleDateString())}</td><td>${esc(x.name)}<br><a href="tel:${esc(x.phone)}">${esc(x.phone)}</a>${x.email ? `<br>${esc(x.email)}` : ''}</td><td><strong>${esc(x.service || '')}</strong><br>${esc(x.message)}</td><td><label class="sr-only" for="ls-${x.id}">Status for ${esc(x.name)}</label><select class="field" id="ls-${x.id}" data-lead="${x.id}">${['new', 'contacted', 'quoted', 'won', 'lost'].map((s) => `<option${s === x.status ? ' selected' : ''}>${s}</option>`).join('')}</select></td></tr>`));
+  async leads(p, r) { const l = await store.listLeads(); p.innerHTML = '<h2 style="margin-top:0">Leads inbox</h2>' + table(['Received', 'Contact', 'Request', 'Status'], l.map((x) => `<tr><td>${esc(new Date(x.created).toLocaleDateString())}</td><td>${esc(x.name)}<br><a href="tel:${esc(x.phone)}">${esc(x.phone)}</a>${x.email ? `<br>${esc(x.email)}` : ''}</td><td>${x.kind ? `<span class="pill">${esc(x.kind)}</span> ` : ''}<strong>${esc(x.service || '')}</strong><br>${esc(x.message)}</td><td><label class="sr-only" for="ls-${x.id}">Status for ${esc(x.name)}</label><select class="field" id="ls-${x.id}" data-lead="${x.id}">${['new', 'contacted', 'quoted', 'won', 'lost'].map((s) => `<option${s === x.status ? ' selected' : ''}>${s}</option>`).join('')}</select></td></tr>`));
     p.onchange = async (e) => { if (e.target.dataset.lead) { await store.updateLead(e.target.dataset.lead, { status: e.target.value }); } }; },
   async bookings(p, r) { const b = await store.listBookings(); p.innerHTML = '<h2 style="margin-top:0">Bookings</h2>' + table(['Day', 'Time', 'Customer', 'Service', 'Status', ''], b.sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time)).map((x) => `<tr><td>${esc(x.date)}</td><td>${esc(x.time)}</td><td>${esc(x.name)}<br>${esc(x.phone)}</td><td>${esc(x.service || '')}</td><td>${pill(x.status)}</td><td class="btn-row">${x.status === 'pending' ? `<button class="btn" data-bk="${x.id}" data-s="confirmed">Confirm</button>` : ''}${x.status !== 'cancelled' ? `<button class="btn btn-ghost" data-bk="${x.id}" data-s="cancelled">Cancel</button>` : ''}</td></tr>`));
     p.onclick = async (e) => { const id = e.target.dataset.bk; if (id) { await store.updateBooking(id, { status: e.target.dataset.s }); r(); } }; },
@@ -248,4 +294,4 @@ const OWNER = {
 };
 async function uploadPublic(file) { const f = new FormData(); f.append('photo', file); return store.req('POST', '/content/upload', f, true); }
 
-hydrate(); pages[document.body.dataset.page]?.();
+hydrate().then(initGallery); pages[document.body.dataset.page]?.();

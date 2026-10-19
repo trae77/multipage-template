@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://example.com/</loc></url>
+  <url><loc>https://example.com/services/</loc></url>
+  <url><loc>https://example.com/services/menu-favorites/</loc></url>
+  <url><loc>https://example.com/services/specials/</loc></url>
+  <url><loc>https://example.com/services/sides-and-extras/</loc></url>
+  <url><loc>https://example.com/services/groups-and-catering/</loc></url>
+  <url><loc>https://example.com/about/</loc></url>
+  <url><loc>https://example.com/gallery/</loc></url>
+  <url><loc>https://example.com/reviews/</loc></url>
+  <url><loc>https://example.com/service-area/</loc></url>
+  <url><loc>https://example.com/faq/</loc></url>
+  <url><loc>https://example.com/blog/</loc></url>
+  <url><loc>https://example.com/blog/welcome/</loc></url>
+  <url><loc>https://example.com/blog/seasonal-checklist/</loc></url>
+  <url><loc>https://example.com/contact/</loc></url>
+  <url><loc>https://example.com/book/</loc></url>
+  <url><loc>https://example.com/menu/</loc></url>
+  <url><loc>https://example.com/order/</loc></url>
+</urlset>

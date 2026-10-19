@@ -51,9 +51,33 @@ Re-sync presets/themes from client-site-templates: `npm run presets -- /path/to/
 
 There are 28 trade presets: the 20 library categories plus the original one-pager trades (pressure-washing, landscaping, plumbing, cleaning-service, restaurant, auto-detailing, handyman, generic-business).
 
+## Main-action page per industry (spec v2)
+
+`presets/industries.json` picks each trade's main-action page. It becomes the header button and the third button on the mobile action bar (Call · Text · action). Override it with `actionPage` / `actionLabel` in `site.config.json` or `--action`.
+
+| Action | Trades | Pages |
+|---|---|---|
+| quote | trades, cleaning, landscaping, pressure-washing, default | `/quote/` builder (service, size, condition, timing, "Text us photos", contact). No price shown: "We'll send your price." |
+| book | auto, salon/barber, pet, dental/medical, tattoo, daycare, law/accounting | `/book/` 4-step request with open slots, or an embed when `booking.embedUrl` (Calendly/Square) is set |
+| order | restaurant | `/menu/` (HTML with section anchors) + `/order/` cart, pickup time, order request. Optional `ordering.squareUrl` link-out |
+| schedule | fitness, church | `/schedule/` from `content.schedule` |
+| listings | real estate | `/listings/` + `/listings/<id>/` from `content.listings` (agent's own data, "ask the agent" for price) |
+| packages | photography | `/packages/` from `content.packages` (no prices, "Ask about…") |
+
+Dental/medical has the customer portal turned off. `/portal/` links to `business.patientPortalUrl`.
+
+Navigation: up to 6 desktop links plus the phone number, a "Log in" text link and the action button. Below 1024px there is a visible **Menu** button that opens a full-screen sheet (focus trap, Escape to close, action button first). All tap targets are at least 48px.
+
+Blog posts are markdown files in `content/blog/YYYY-MM-DD-slug.md` with front matter (`title`, `date`, `excerpt`, `author`, `sample`). Pages are paginated by 9, each post gets Article JSON-LD, and posts include a call-to-action box.
+Gallery is at `/gallery/` (`/projects/` redirects there), with category chips from `projects[].category` and a keyboard-friendly lightbox.
+
+The static demo (`npm run build:demo`) builds the main demo plus `demos/<trade>/` for restaurant, fitness, real-estate, photography, salon-barber and dental-medical.
+
+P2 (Supabase / Cloudflare) is not built. See `docs/p2-backend-options.md`.
+
 ## Pages
 
-Home · Services + one detail page per service · About · Projects (before/after slider) · Reviews · Service Area (list + map) · FAQ (with FAQPage JSON-LD) ·
+Home · Services + one detail page per service · About · Gallery (before/after slider, filters, lightbox) · main-action page (see above) · Reviews · Service Area (list + map) · FAQ (with FAQPage JSON-LD) ·
 Blog (posts from `content/*.json`, plus dashboard posts) · Contact/Quote form · Book · Log in · Customer portal · Owner dashboard.
 
 ## Features: STATIC vs NEEDS BACKEND
@@ -72,7 +96,8 @@ Blog (posts from `content/*.json`, plus dashboard posts) · Contact/Quote form �
 | Analytics hook (Plausible / GA4) | STATIC | Off by default |
 | Sticky click-to-call bar (mobile) | STATIC | |
 | Accessibility: skip link, labels, focus rings, AA contrast colors, aria tabs, reduced motion | STATIC | |
-| Contact / quote request form → leads inbox | NEEDS BACKEND | `POST /api/leads`, honeypot + rate limit |
+| Quote builder, menu + pickup cart, schedule, listings, packages pages | STATIC | Submissions are leads (NEEDS BACKEND to store) |
+| Contact / quote / order request → leads inbox | NEEDS BACKEND | `POST /api/leads`, honeypot + rate limit |
 | Online booking with open slots, no double-booking | NEEDS BACKEND | Slot rules shared client/server (`src/public/slots.js`) |
 | Customer login, sessions, roles (owner / customer) | NEEDS BACKEND | bcrypt hashes, 14-day bearer tokens |
 | Customer: view quotes, accept/decline | NEEDS BACKEND | Drafts hidden from customers |

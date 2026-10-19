@@ -10,6 +10,7 @@ export async function createApp(opts = {}) {
   const uploadDir = path.join(dataDir, 'uploads'); fs.mkdirSync(uploadDir, { recursive: true });
   const config = opts.config || JSON.parse(fs.readFileSync(path.join(ROOT, 'site.config.json'), 'utf8'));
   const db = openDb(opts.dbFile || path.join(dataDir, 'site.db')); await db.exec(SCHEMA);
+  await db.run("ALTER TABLE leads ADD COLUMN kind TEXT DEFAULT 'contact'").catch(() => {}); // older databases
   const now = opts.now || (() => new Date());
 
   // Owner account from env (like bigfoot's OWNER_EMAIL / OWNER_PASSWORD).
@@ -76,9 +77,9 @@ export async function createApp(opts = {}) {
   const mapLead = (l) => ({ ...l, id: String(l.id) });
   app.post('/api/leads', limit(5, 60000), wrap(async (req, res) => {
     if (req.body.website) return res.status(201).json({ ok: true }); // honeypot
-    const d = { name: str(req.body.name, 200), phone: str(req.body.phone, 40), email: str(req.body.email, 200), service: str(req.body.service, 200), address: str(req.body.address, 300), message: str(req.body.message) };
+    const d = { kind: ['contact', 'quote', 'order', 'booking'].includes(req.body.kind) ? req.body.kind : 'contact', name: str(req.body.name, 200), phone: str(req.body.phone, 40), email: str(req.body.email, 200), service: str(req.body.service, 200), address: str(req.body.address, 300), message: str(req.body.message) };
     if (!d.name || !d.phone || !d.message) return bad(res, 400, 'Name, phone and message are required');
-    const r = await db.run('INSERT INTO leads(name,phone,email,service,address,message) VALUES(?,?,?,?,?,?)', Object.values(d));
+    const r = await db.run('INSERT INTO leads(kind,name,phone,email,service,address,message) VALUES(?,?,?,?,?,?,?)', Object.values(d));
     notify('lead.created', d); res.status(201).json({ id: String(r.id) });
   }));
   app.get('/api/leads', auth('owner'), wrap(async (_req, res) => res.json((await db.all('SELECT * FROM leads ORDER BY id DESC')).map(mapLead))));

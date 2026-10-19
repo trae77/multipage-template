@@ -48,6 +48,10 @@ test('leads: public submit with validation, owner inbox, notification hook', asy
   const l = await call('GET', '/api/leads', { token: owner }); assert.equal(l.body[0].message, 'Fix roof');
   assert.equal((await call('PATCH', `/api/leads/${l.body[0].id}`, { token: owner, body: { status: 'won' } })).status, 200);
   assert.ok(events.includes('lead.created'));
+  await call('POST', '/api/leads', { body: { kind: 'order', name: 'B', phone: '555', message: '1 x item' } });
+  await call('POST', '/api/leads', { body: { kind: 'evil', name: 'C', phone: '555', message: 'x' } });
+  const kinds = (await call('GET', '/api/leads', { token: owner })).body.map((x) => x.kind);
+  assert.deepEqual(kinds.slice(0, 2), ['contact', 'order']);
 });
 
 test('quotes: owner builds, customer sees only own sent quotes and can accept once', async () => {

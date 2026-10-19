@@ -5,7 +5,7 @@
   "main": "server/index.js",
   "scripts": {
     "build": "node tools/build.mjs",
-    "build:demo": "node tools/build.mjs --demo",
+    "build:demo": "node tools/build-demos.mjs",
     "start": "node server/index.js",
     "dev": "npm run build && OWNER_EMAIL=owner@demo.test OWNER_PASSWORD=demo-owner SEED_DEMO_DATA=true DATA_DIR=./data node server/index.js",
     "presets": "node tools/make-presets.mjs",

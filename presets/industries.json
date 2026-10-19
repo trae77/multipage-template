@@ -1,0 +1,11 @@
+{
+  "_note": "Main-action (money) page per trade (spec v2 section 2). 'action' is the header CTA and the third button on the mobile action bar. Unlisted trades use 'quote'.",
+  "_defaults": { "action": "quote" },
+  "book": ["auto-repair", "auto-detailing", "salon-barber", "pet-services", "dental-medical", "tattoo", "daycare", "law-accounting"],
+  "order": ["restaurant"],
+  "schedule": ["fitness", "church"],
+  "listings": ["real-estate"],
+  "packages": ["photography"],
+  "portalOff": ["dental-medical"],
+  "labels": { "quote": "Get a Quote", "book": "Book Now", "order": "Order Pickup", "schedule": "See Schedule", "listings": "View Listings", "packages": "See Packages" }
+}

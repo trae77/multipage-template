@@ -77,6 +77,17 @@ P2 (Supabase / Cloudflare) is not built. See `docs/p2-backend-options.md`.
 
 > **Hosting: GitHub Pages is for demos and mockups only.** GitHub's terms say Pages is not for running an online business or e-commerce site ([GitHub Pages limits](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits)). Client production sites go on a commercial-use host: **Render** for this template's server build (ordering, customer portal, owner dashboard), or **Cloudflare Pages** for a static-only build. Never put card data on these pages.
 
+## Fonts and palettes (optional)
+`--palette auto|<id>` and `--fonts auto|<id>` (or `"palette"` / `"fonts"` in `site.config.json`) apply the client-site-templates design system (`tools/design.vendor.mjs`): exact industry palettes and 10 Google Fonts pairings, loaded as one `display=swap` request with preconnect. `colors` in the config still wins. The build fails (exit 4) if a button label falls below 4.5:1 contrast. The six industry demos use `auto` for both; the main roofing demo is unchanged.
+
+## Build output is not versioned
+`dist/` and `dist-demo/` are build output and are git-ignored. Render builds `dist/` itself (`render.yaml`: `npm ci && npm run build`). The static demo is built with `npm run build:demo` and published by pushing `dist-demo/` to the `gh-pages` branch, which is the only place a built demo is stored:
+```bash
+npm run build:demo
+git worktree add /tmp/ghp gh-pages && rsync -a --delete --exclude .git dist-demo/ /tmp/ghp/ \
+  && cd /tmp/ghp && git add -A && git commit -m "Static demo build from <main sha>" && git push origin gh-pages
+```
+
 ## Structured data
 Every page carries LocalBusiness JSON-LD with the most specific schema.org subtype for the trade (shared map in `tools/schema.vendor.mjs`, e.g. Plumber, RoofingContractor, HVACBusiness, HairSalon, Restaurant, Dentist, RealEstateAgent; set `business.schemaAlias` for e.g. `nail-salon` → NailSalon). It **never emits `aggregateRating` or `review`**. `openingHoursSpecification` only comes from `business.hoursJson` (`{"Mon-Fri":"08:00-17:00"}`); free-text `hours` stays display-only. FAQPage markup is **off** by default (Google limits FAQ rich results to government and health sites); turn it on with `"faqSchema": true` or `--faq-schema`.
 

@@ -4,6 +4,7 @@
 //   node tools/build.mjs --demo                -> dist-demo/   (browser-only, localStorage mock data)
 // Options: --config site.config.json --trade roofing --theme premium-dark --out dir --site-url https://...
 import { schemaType, parseHoursJson } from './schema.vendor.mjs';
+import { PALETTES, resolveDesign, fontLinks, fontCss } from './design.vendor.mjs';
 import fs from 'node:fs'; import path from 'node:path'; import url from 'node:url';
 import { md, esc } from '../src/md.mjs';
 const ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
@@ -36,8 +37,11 @@ const ACTION_LABEL = cfg.actionLabel || IND.labels[ACTION];
 // Medical: no portal on this stack (no HIPAA BAA). Link to the practice's own patient portal instead.
 const MEDICAL = IND.portalOff.includes(tradeKey); if (MEDICAL) F.portal = false;
 const SQUARE = /^https:\/\//.test(cfg.ordering?.squareUrl || '') ? cfg.ordering.squareUrl : '';
-const primary = cfg.colors?.primary || trade.colors?.primary || '#1e3a8a';
-const accent = cfg.colors?.accent || trade.colors?.accent || '#f59e0b';
+// Opt-in design system (client-site-templates spec v4 A1/A2): --palette auto|<id>, --fonts auto|<id> (or cfg.palette / cfg.fonts).
+const PALETTE = resolveDesign('palette', opt('palette', cfg.palette), tradeKey, tradeKey);
+const FONTS = resolveDesign('fonts', opt('fonts', cfg.fonts), tradeKey, tradeKey);
+const primary = cfg.colors?.primary || (PALETTE && PALETTES[PALETTE].primary) || trade.colors?.primary || '#1e3a8a';
+const accent = cfg.colors?.accent || (PALETTE && PALETTES[PALETTE].accent) || trade.colors?.accent || '#f59e0b';
 const dark = THEMES[themeKey].dark;
 const services = (cfg.services?.length ? cfg.services : trade.services).map((s) => ({ ...s, slug: s.slug || s.name.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') }));
 
@@ -49,10 +53,12 @@ const lum = (h) => { const [r, g, b] = rgb(h).map((v) => { v /= 255; return v <=
 const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 const onColor = (bg) => (contrast(bg, '#ffffff') >= contrast(bg, '#0f172a') ? '#ffffff' : '#0f172a');
 const readable = (fg, bg) => { let c = fg; for (let i = 0; i < 20 && contrast(c, bg) < 4.5; i++) c = mix(c, lum(bg) > 0.5 ? '#000000' : '#ffffff', 0.15); return c; };
+for (const [w, fg, bg] of [['CTA label on accent', onColor(accent), accent], ['label on primary', onColor(primary), primary]]) if (contrast(fg, bg) < 4.5) { console.error(`✗ Contrast check failed: ${w} ${fg} on ${bg} = ${contrast(fg, bg).toFixed(2)}:1 (needs 4.5)`); process.exit(4); }
 const pageBg = dark ? '#0b0f17' : '#ffffff';
 const vars = `:root{--brand-primary:${primary};--brand-accent:${accent};--accent:${readable(accent, pageBg)};--on-accent:${onColor(accent)};--on-primary:${onColor(primary)};--link:${readable(primary, dark ? '#131a26' : '#f8fafc')};--hero-tint:${mix(primary, '#ffffff', 0.9)};--hero-deep:${mix(primary, '#000000', 0.45)};--border-strong:${dark ? 'rgba(255,255,255,.25)' : 'rgba(15,23,42,.3)'};--focus:${dark ? '#93c5fd' : '#1d4ed8'}}`;
 // Theme CSS assumes one-pager markup; header text color needs to stay readable with our header.
 const css = fs.readFileSync(path.join(ROOT, 'src/public/base.css'), 'utf8') + '\n' + vars + `\n/* Theme: ${themeKey} (from client-site-templates tools/library.mjs) */\n` + THEMES[themeKey].css
+  + (FONTS ? fontCss(FONTS) : '')
   + (themeKey === 'bold-industrial' ? '\n.site-header{color:#f8fafc}.site-header .hdr-login,.site-header .hdr-phone{color:#f8fafc}.menu-btn{border-color:rgba(255,255,255,.5)}' : '');
 
 // ---- pages ----
@@ -101,7 +107,7 @@ function page(rel, { title, description, page: pageId = '', body, noindex = fals
 ${canon ? `<link rel="canonical" href="${esc(canon)}">` : ''}${noindex || DEMO ? '<meta name="robots" content="noindex">' : ''}
 <meta property="og:title" content="${esc(fullTitle)}"><meta property="og:description" content="${esc(description)}"><meta property="og:type" content="website">${canon ? `<meta property="og:url" content="${esc(canon)}">` : ''}
 <meta name="theme-color" content="${primary}">
-<link rel="stylesheet" href="${pre}assets/site.css">
+${FONTS ? fontLinks(FONTS) + '\n' : ''}<link rel="stylesheet" href="${pre}assets/site.css">
 <script type="application/ld+json">${jsonLd()}</script>
 ${analytics()}
 </head>

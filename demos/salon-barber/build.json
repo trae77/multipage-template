@@ -1,0 +1,9 @@
+{
+  "mode": "demo",
+  "trade": "salon-barber",
+  "theme": "premium-dark",
+  "layout": "salon-book",
+  "hero": "centered",
+  "heroImage": null,
+  "pages": 16
+}

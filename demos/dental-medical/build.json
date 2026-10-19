@@ -1,0 +1,9 @@
+{
+  "mode": "demo",
+  "trade": "dental-medical",
+  "theme": "clean-minimal",
+  "layout": "care-visit",
+  "hero": "centered",
+  "heroImage": null,
+  "pages": 16
+}

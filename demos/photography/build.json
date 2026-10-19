@@ -1,0 +1,9 @@
+{
+  "mode": "demo",
+  "trade": "photography",
+  "theme": "clean-minimal",
+  "layout": "photo-portfolio",
+  "hero": "portfolio",
+  "heroImage": null,
+  "pages": 17
+}

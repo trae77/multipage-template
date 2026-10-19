@@ -1,0 +1,9 @@
+{
+  "mode": "demo",
+  "trade": "restaurant",
+  "theme": "clean-minimal",
+  "layout": "rest-order",
+  "hero": "menu-first",
+  "heroImage": null,
+  "pages": 18
+}

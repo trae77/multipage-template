@@ -9,7 +9,7 @@ Two builds from the same source:
 | Build | Command | Runs on | Data |
 |---|---|---|---|
 | **Server** | `npm run build && npm start` | Node host (Render) | SQLite + uploads in `DATA_DIR` |
-| **Static demo** | `npm run build:demo` → `dist-demo/` | GitHub Pages / any static host | Mock data in the browser's `localStorage` |
+| **Static demo** | `npm run build:demo` → `dist-demo/` | GitHub Pages (demos only) | Mock data in the browser's `localStorage` |
 
 The demo shows a **"Demo mode, sample data"** banner on every page, the demo logins on the login page, and a
 "Reset demo data" button in both dashboards. All demo content is tagged **Sample**.
@@ -75,6 +75,11 @@ The static demo (`npm run build:demo`) builds the main demo plus `demos/<trade>/
 
 P2 (Supabase / Cloudflare) is not built. See `docs/p2-backend-options.md`.
 
+> **Hosting: GitHub Pages is for demos and mockups only.** GitHub's terms say Pages is not for running an online business or e-commerce site ([GitHub Pages limits](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits)). Client production sites go on a commercial-use host: **Render** for this template's server build (ordering, customer portal, owner dashboard), or **Cloudflare Pages** for a static-only build. Never put card data on these pages.
+
+## Structured data
+Every page carries LocalBusiness JSON-LD with the most specific schema.org subtype for the trade (shared map in `tools/schema.vendor.mjs`, e.g. Plumber, RoofingContractor, HVACBusiness, HairSalon, Restaurant, Dentist, RealEstateAgent; set `business.schemaAlias` for e.g. `nail-salon` → NailSalon). It **never emits `aggregateRating` or `review`**. `openingHoursSpecification` only comes from `business.hoursJson` (`{"Mon-Fri":"08:00-17:00"}`); free-text `hours` stays display-only. FAQPage markup is **off** by default (Google limits FAQ rich results to government and health sites); turn it on with `"faqSchema": true` or `--faq-schema`.
+
 ## Pages
 
 Home · Services + one detail page per service · About · Gallery (before/after slider, filters, lightbox) · main-action page (see above) · Reviews · Service Area (list + map) · FAQ (with FAQPage JSON-LD) ·
@@ -121,7 +126,7 @@ Blog (posts from `content/*.json`, plus dashboard posts) · Contact/Quote form �
 4. Custom domain: add it in Render, then CNAME the root and `www` to `<service>.onrender.com` at your DNS host.
 5. Log in at `/login/` as the owner, create customer logins under **Customers**.
 
-Static demo on GitHub Pages: `npm run build:demo` and publish `dist-demo/` (it includes `.nojekyll`; links are relative so any sub-path works).
+Static demo on GitHub Pages (demo only, not for client production): `npm run build:demo` and publish `dist-demo/` (it includes `.nojekyll`; links are relative so any sub-path works).
 
 ## Layout
 

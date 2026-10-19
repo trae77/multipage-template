@@ -3,6 +3,7 @@
 //   node tools/build.mjs                       -> dist/        (server mode: portal talks to /api)
 //   node tools/build.mjs --demo                -> dist-demo/   (browser-only, localStorage mock data)
 // Options: --config site.config.json --trade roofing --theme premium-dark --out dir --site-url https://...
+import { schemaType, parseHoursJson } from './schema.vendor.mjs';
 import fs from 'node:fs'; import path from 'node:path'; import url from 'node:url';
 import { md, esc } from '../src/md.mjs';
 const ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
@@ -69,9 +70,15 @@ const projectCard = (p) => `<article class="card">${F.beforeAfter !== false ? ba
 const reviewCard = (r) => `<figure class="card review">${sampleTag(r)}<blockquote>“${esc(r.text)}”</blockquote><figcaption>${esc(r.author)}</figcaption></figure>`;
 const postCard = (p, pre) => `<article class="card">${sampleTag(p)}<h3><a href="${pre}blog/${esc(p.slug)}/">${esc(p.title)}</a></h3><p><time datetime="${esc(p.date)}">${esc(p.date)}</time></p><p>${esc(p.excerpt || '')}</p></article>`;
 const head = (t, d) => `<div class="section-head"><h2>${esc(t)}</h2>${d ? `<p>${esc(d)}</p>` : ''}</div>`;
-const jsonLd = () => JSON.stringify({ '@context': 'https://schema.org', '@type': 'LocalBusiness', name: B.name, telephone: B.phone, email: B.email, url: siteUrl || undefined,
-  address: { '@type': 'PostalAddress', streetAddress: (B.address || '').split(',')[0], addressLocality: B.city, addressRegion: B.region, postalCode: B.postalCode },
-  areaServed: (B.serviceAreas || []).map((n) => ({ '@type': 'City', name: n })), ...(B.hours ? { openingHours: B.hours } : {}),
+// LocalBusiness JSON-LD (spec v3 E): most specific schema.org subtype, never aggregateRating/review.
+// Structured hours only from business.hoursJson ({"Mon-Fri":"08:00-17:00"}); free-text hours stay display-only.
+const HOURS_SPEC = B.hoursJson ? parseHoursJson(JSON.stringify(B.hoursJson)) : null;
+const FAQ_SCHEMA = Boolean(cfg.faqSchema) || process.argv.includes('--faq-schema');
+const jsonLd = () => JSON.stringify({ '@context': 'https://schema.org', '@type': schemaType(tradeKey, B.schemaAlias || ''), name: B.name, telephone: B.phone, email: B.email, url: siteUrl || undefined,
+  address: { '@type': 'PostalAddress', streetAddress: (B.address || '').split(',')[0] || undefined, addressLocality: B.city, addressRegion: B.region, postalCode: B.postalCode, addressCountry: 'US' },
+  areaServed: (B.serviceAreas || []).map((n) => ({ '@type': 'City', name: n })), ...(HOURS_SPEC ? { openingHoursSpecification: HOURS_SPEC } : {}),
+  ...(B.geo && B.geo.lat != null ? { geo: { '@type': 'GeoCoordinates', latitude: Number(Number(B.geo.lat).toFixed(5)), longitude: Number(Number(B.geo.lng ?? B.geo.lon).toFixed(5)) } } : {}),
+  ...(B.cuisine ? { servesCuisine: B.cuisine } : {}), ...(B.brokerage ? { parentOrganization: { '@type': 'RealEstateAgent', name: B.brokerage } } : {}),
   makesOffer: services.map((s) => ({ '@type': 'Offer', itemOffered: { '@type': 'Service', name: s.name } })) }).replace(/</g, '\\u003c');
 const analytics = () => { const a = cfg.analytics || {}; if (DEMO || !a.id) return '';
   if (a.provider === 'plausible') return `<script defer data-domain="${esc(a.id)}" src="https://plausible.io/js/script.js"></script>`;
@@ -104,7 +111,8 @@ ${DEMO ? '<div class="demo-banner" role="note">Demo mode, sample data. Nothing h
 <header class="site-header"><div class="wrap"><a class="logo" href="${pre}">${esc(B.name)}</a>
 <nav class="nav-desktop" aria-label="Main">${TOP.map(link).join('')}</nav>
 <div class="hdr-actions"><a class="hdr-phone" href="${tel}">${esc(B.phone)}</a>${login ? `<a class="hdr-login" href="${pre}login/">Log in</a>` : ''}<a class="btn hdr-cta" href="${cta}">${esc(ACTION_LABEL)}</a>
-<button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-sheet"><span class="menu-icon" aria-hidden="true"></span>Menu</button></div></div></header>
+<button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-sheet"><span class="menu-icon" aria-hidden="true"></span>Menu</button></div></div>
+<nav class="nav-priority" aria-label="Main links">${[[`${ACTION}/`, ACTION_LABEL], ...TOP.filter(([h]) => h !== `${ACTION}/`).slice(0, 2)].map(link).join('')}</nav></header>
 <div id="menu-sheet" class="menu-sheet" role="dialog" aria-modal="true" aria-label="Site menu" hidden><div class="menu-sheet-inner">
 <button class="menu-close" type="button">Close <span aria-hidden="true">×</span></button>
 <a class="btn menu-cta" href="${cta}">${esc(ACTION_LABEL)}</a>
@@ -163,7 +171,7 @@ ${cats.length > 1 ? `<div class="chips" role="group" aria-label="Filter by categ
 if (F.reviews !== false) page('reviews/', { title: 'Reviews', page: 'reviews', description: `Customer reviews for ${B.name}.`, body: () => `<section class="page-hero"><div class="wrap"><h1>Reviews</h1><p>Reviews are shown only from data the owner enters from real customers.</p></div></section><section><div class="wrap grid">${content.reviews.length ? content.reviews.map(reviewCard).join('') : '<p>No reviews yet.</p>'}</div></section>` });
 if (F.serviceArea !== false) page('service-area/', { title: 'Service Area', page: 'area', description: `${B.name} serves ${(B.serviceAreas || []).join(', ')}.`, body: () => `<section class="page-hero"><div class="wrap"><h1>Service area</h1></div></section><section><div class="wrap"><ul class="areas">${(B.serviceAreas || []).map((a) => `<li>${esc(a)}</li>`).join('')}</ul>${B.mapQuery ? `<iframe class="map-frame" title="Map of ${esc(B.mapQuery)}" loading="lazy" src="https://maps.google.com/maps?q=${encodeURIComponent(B.mapQuery)}&z=10&output=embed"></iframe>` : ''}</div></section>` });
 if (F.faq !== false) page('faq/', { title: 'FAQ', page: 'faq', description: `Frequently asked questions for ${B.name}.`, body: () => `<section class="page-hero"><div class="wrap"><h1>FAQ</h1></div></section><section><div class="wrap faq prose">${content.faq.map((f) => `<details><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join('')}</div></section>
-<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: content.faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) }).replace(/</g, '\\u003c')}</script>` });
+${FAQ_SCHEMA ? `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: content.faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) }).replace(/</g, '\\u003c')}</script>` : ''}` });
 const ctaBox = (pre) => `<aside class="cta-box" aria-label="${esc(ACTION_LABEL)}"><h2>Ready when you are</h2><p>Call <a href="${tel}">${esc(B.phone)}</a> or use the button below.</p><a class="btn" href="${pre}${ACTION}/">${esc(ACTION_LABEL)}</a></aside>`;
 if (F.blog !== false) {
   const PER = 9; const pages = Math.max(1, Math.ceil(content.posts.length / PER));

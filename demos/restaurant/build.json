@@ -5,5 +5,6 @@
   "layout": "rest-order",
   "hero": "menu-first",
   "heroImage": null,
-  "pages": 18
+  "allowFeature": null,
+  "pages": 17
 }

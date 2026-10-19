@@ -5,5 +5,6 @@
   "layout": "care-visit",
   "hero": "centered",
   "heroImage": null,
+  "allowFeature": null,
   "pages": 16
 }

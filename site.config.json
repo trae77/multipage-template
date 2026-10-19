@@ -1,0 +1,40 @@
+{
+  "business": {
+    "name": "Sample Home Services Co.",
+    "tagline": "Sample tagline: replace with the business's own words.",
+    "phone": "(555) 010-0100",
+    "email": "hello@example.com",
+    "address": "123 Sample St, Denver, CO 80202",
+    "city": "Denver",
+    "region": "CO",
+    "postalCode": "80202",
+    "serviceAreas": ["Denver", "Aurora", "Lakewood", "Thornton"],
+    "mapQuery": "Denver, CO",
+    "hours": "",
+    "about": "Sample about text. Replace this with the business owner's real story. Nothing here is a claim about a real company.",
+    "social": {}
+  },
+  "siteUrl": "https://example.com",
+  "trade": "roofing",
+  "theme": "",
+  "colors": {},
+  "services": [],
+  "features": {
+    "gallery": true,
+    "beforeAfter": true,
+    "reviews": true,
+    "serviceArea": true,
+    "faq": true,
+    "blog": true,
+    "quoteForm": true,
+    "booking": true,
+    "portal": true,
+    "admin": true,
+    "callBar": true,
+    "payInvoice": true
+  },
+  "booking": { "slotMinutes": 60, "dayStart": "08:00", "dayEnd": "17:00", "days": [1, 2, 3, 4, 5], "leadDays": 1, "windowDays": 21 },
+  "payments": { "stripePaymentLink": "" },
+  "analytics": { "provider": "none", "id": "" },
+  "notifications": { "note": "Providers are configured with env vars, see .env.example. Off unless set." }
+}

@@ -1,0 +1,730 @@
+{
+  "roofing": {
+    "label": "roofing",
+    "theme": "bold-industrial",
+    "colors": {
+      "primary": "#7c2d12",
+      "accent": "#f59e0b"
+    },
+    "services": [
+      {
+        "name": "Roof Repair",
+        "summary": "Leaks, flashing, and damaged shingles."
+      },
+      {
+        "name": "Roof Replacement",
+        "summary": "Tear-off and new roofing."
+      },
+      {
+        "name": "Roof Inspections",
+        "summary": "A look at the roof before you decide."
+      },
+      {
+        "name": "Gutters",
+        "summary": "Gutter installs, repairs, and cleaning."
+      }
+    ]
+  },
+  "hvac": {
+    "label": "heating & cooling",
+    "theme": "clean-minimal",
+    "colors": {
+      "primary": "#1d4ed8",
+      "accent": "#ef4444"
+    },
+    "services": [
+      {
+        "name": "Heating Repair",
+        "summary": "Furnaces, heat pumps, and boilers."
+      },
+      {
+        "name": "AC Repair",
+        "summary": "Central air and mini-split systems."
+      },
+      {
+        "name": "System Installs",
+        "summary": "New heating and cooling equipment."
+      },
+      {
+        "name": "Maintenance Visits",
+        "summary": "Seasonal tune-ups and filter changes."
+      }
+    ]
+  },
+  "electrician": {
+    "label": "electrical services",
+    "theme": "bold-industrial",
+    "colors": {
+      "primary": "#1e293b",
+      "accent": "#facc15"
+    },
+    "services": [
+      {
+        "name": "Wiring & Repairs",
+        "summary": "Outlets, switches, and troubleshooting."
+      },
+      {
+        "name": "Panels & Breakers",
+        "summary": "Panel upgrades and breaker work."
+      },
+      {
+        "name": "Lighting",
+        "summary": "Indoor, outdoor, and recessed lighting."
+      },
+      {
+        "name": "EV Chargers",
+        "summary": "Home charger installs."
+      }
+    ]
+  },
+  "painting": {
+    "label": "painting",
+    "theme": "warm-local",
+    "colors": {
+      "primary": "#0f766e",
+      "accent": "#f97316"
+    },
+    "services": [
+      {
+        "name": "Interior Painting",
+        "summary": "Walls, ceilings, and rooms."
+      },
+      {
+        "name": "Exterior Painting",
+        "summary": "Siding, trim, and doors."
+      },
+      {
+        "name": "Cabinets & Trim",
+        "summary": "Cabinet refinishing and trim work."
+      },
+      {
+        "name": "Drywall Repair",
+        "summary": "Patches and prep before paint."
+      }
+    ]
+  },
+  "auto-repair": {
+    "label": "auto repair",
+    "theme": "bold-industrial",
+    "colors": {
+      "primary": "#991b1b",
+      "accent": "#fbbf24"
+    },
+    "services": [
+      {
+        "name": "Brakes",
+        "summary": "Pads, rotors, and brake checks."
+      },
+      {
+        "name": "Oil Changes",
+        "summary": "Oil, filters, and fluids."
+      },
+      {
+        "name": "Diagnostics",
+        "summary": "Check-engine lights and warning codes."
+      },
+      {
+        "name": "Tires & Alignment",
+        "summary": "Tire service and wheel alignment."
+      }
+    ]
+  },
+  "salon-barber": {
+    "label": "salon & barber",
+    "theme": "premium-dark",
+    "colors": {
+      "primary": "#6b21a8",
+      "accent": "#f0abfc"
+    },
+    "services": [
+      {
+        "name": "Haircuts",
+        "summary": "Cuts for all hair types."
+      },
+      {
+        "name": "Color",
+        "summary": "Color, highlights, and touch-ups."
+      },
+      {
+        "name": "Beard & Shave",
+        "summary": "Beard trims and shaves."
+      },
+      {
+        "name": "Styling",
+        "summary": "Blowouts and event styling."
+      }
+    ]
+  },
+  "fitness": {
+    "label": "fitness",
+    "theme": "bold-industrial",
+    "colors": {
+      "primary": "#111827",
+      "accent": "#22c55e"
+    },
+    "services": [
+      {
+        "name": "Personal Training",
+        "summary": "One-on-one sessions."
+      },
+      {
+        "name": "Group Classes",
+        "summary": "Classes in a group setting."
+      },
+      {
+        "name": "Open Gym",
+        "summary": "Access to the gym floor."
+      },
+      {
+        "name": "Intro Session",
+        "summary": "A first visit to get started."
+      }
+    ]
+  },
+  "pet-services": {
+    "label": "pet care",
+    "theme": "warm-local",
+    "colors": {
+      "primary": "#0e7490",
+      "accent": "#f472b6"
+    },
+    "services": [
+      {
+        "name": "Grooming",
+        "summary": "Baths, trims, and nail care."
+      },
+      {
+        "name": "Dog Walking",
+        "summary": "Walks while you are away."
+      },
+      {
+        "name": "Pet Sitting",
+        "summary": "Visits and care at home."
+      },
+      {
+        "name": "Training",
+        "summary": "Basic manners and obedience."
+      }
+    ]
+  },
+  "dental-medical": {
+    "label": "dental & medical care",
+    "theme": "clean-minimal",
+    "colors": {
+      "primary": "#0369a1",
+      "accent": "#14b8a6"
+    },
+    "services": [
+      {
+        "name": "Checkups",
+        "summary": "Routine visits and exams."
+      },
+      {
+        "name": "Cleanings",
+        "summary": "Routine dental cleanings."
+      },
+      {
+        "name": "New Patients",
+        "summary": "Getting started with a first visit."
+      },
+      {
+        "name": "Other Services",
+        "summary": "Ask about anything not listed here."
+      }
+    ]
+  },
+  "real-estate": {
+    "label": "real estate",
+    "theme": "premium-dark",
+    "colors": {
+      "primary": "#1e3a8a",
+      "accent": "#d4a017"
+    },
+    "services": [
+      {
+        "name": "Buying a Home",
+        "summary": "Help finding and buying a home."
+      },
+      {
+        "name": "Selling a Home",
+        "summary": "Listing and selling your home."
+      },
+      {
+        "name": "Home Value",
+        "summary": "Ask what your home might sell for."
+      },
+      {
+        "name": "Relocation",
+        "summary": "Moving into or out of the area."
+      }
+    ]
+  },
+  "concrete": {
+    "label": "concrete work",
+    "theme": "bold-industrial",
+    "colors": {
+      "primary": "#44403c",
+      "accent": "#f59e0b"
+    },
+    "services": [
+      {
+        "name": "Driveways",
+        "summary": "New driveways and replacements."
+      },
+      {
+        "name": "Patios & Walkways",
+        "summary": "Patios, sidewalks, and steps."
+      },
+      {
+        "name": "Foundations & Slabs",
+        "summary": "Slabs for garages, sheds, and additions."
+      },
+      {
+        "name": "Repairs",
+        "summary": "Cracked or uneven concrete."
+      }
+    ]
+  },
+  "fencing": {
+    "label": "fencing",
+    "theme": "earthy-organic",
+    "colors": {
+      "primary": "#3f6212",
+      "accent": "#d97706"
+    },
+    "services": [
+      {
+        "name": "Wood Fences",
+        "summary": "Privacy and picket fences."
+      },
+      {
+        "name": "Vinyl & Composite",
+        "summary": "Low-upkeep fence styles."
+      },
+      {
+        "name": "Chain Link & Metal",
+        "summary": "Chain link, aluminum, and steel."
+      },
+      {
+        "name": "Gates & Repairs",
+        "summary": "Gates, posts, and fence repairs."
+      }
+    ]
+  },
+  "pest-control": {
+    "label": "pest control",
+    "theme": "modern-bold-color",
+    "colors": {
+      "primary": "#15803d",
+      "accent": "#facc15"
+    },
+    "services": [
+      {
+        "name": "General Pests",
+        "summary": "Ants, spiders, and other insects."
+      },
+      {
+        "name": "Rodents",
+        "summary": "Mice and rats."
+      },
+      {
+        "name": "Termites",
+        "summary": "Termite inspections and treatment."
+      },
+      {
+        "name": "Wasps & Bees",
+        "summary": "Nests around the home."
+      }
+    ]
+  },
+  "moving": {
+    "label": "moving",
+    "theme": "coastal-fresh",
+    "colors": {
+      "primary": "#0e7490",
+      "accent": "#f97316"
+    },
+    "services": [
+      {
+        "name": "Local Moves",
+        "summary": "Moves within the area."
+      },
+      {
+        "name": "Long-Distance Moves",
+        "summary": "Moves to another city or state."
+      },
+      {
+        "name": "Packing",
+        "summary": "Packing and unpacking help."
+      },
+      {
+        "name": "Loading & Unloading",
+        "summary": "Help loading or unloading."
+      }
+    ]
+  },
+  "tree-service": {
+    "label": "tree service",
+    "theme": "earthy-organic",
+    "colors": {
+      "primary": "#166534",
+      "accent": "#a16207"
+    },
+    "services": [
+      {
+        "name": "Tree Trimming",
+        "summary": "Pruning and shaping."
+      },
+      {
+        "name": "Tree Removal",
+        "summary": "Removing trees of any size."
+      },
+      {
+        "name": "Stump Grinding",
+        "summary": "Grinding stumps below grade."
+      },
+      {
+        "name": "Storm Cleanup",
+        "summary": "Fallen limbs and debris."
+      }
+    ]
+  },
+  "tattoo": {
+    "label": "tattoo studio",
+    "theme": "premium-dark",
+    "colors": {
+      "primary": "#7f1d1d",
+      "accent": "#f87171"
+    },
+    "services": [
+      {
+        "name": "Custom Designs",
+        "summary": "Pieces drawn for you."
+      },
+      {
+        "name": "Flash",
+        "summary": "Ready-made designs."
+      },
+      {
+        "name": "Cover-Ups",
+        "summary": "Covering or reworking older tattoos."
+      },
+      {
+        "name": "Piercing",
+        "summary": "Ask what is offered."
+      }
+    ]
+  },
+  "daycare": {
+    "label": "child care",
+    "theme": "coastal-fresh",
+    "colors": {
+      "primary": "#2563eb",
+      "accent": "#f472b6"
+    },
+    "services": [
+      {
+        "name": "Infants",
+        "summary": "Care for the youngest children."
+      },
+      {
+        "name": "Toddlers",
+        "summary": "Care for toddlers."
+      },
+      {
+        "name": "Preschool",
+        "summary": "Preschool-age programs."
+      },
+      {
+        "name": "Before & After School",
+        "summary": "Care around the school day."
+      }
+    ]
+  },
+  "law-accounting": {
+    "label": "legal & accounting services",
+    "theme": "clean-minimal",
+    "colors": {
+      "primary": "#1e3a5f",
+      "accent": "#b8860b"
+    },
+    "services": [
+      {
+        "name": "Consultations",
+        "summary": "A first conversation about your situation."
+      },
+      {
+        "name": "Tax & Bookkeeping",
+        "summary": "Tax returns, bookkeeping, and payroll."
+      },
+      {
+        "name": "Business Matters",
+        "summary": "Help with business setup and paperwork."
+      },
+      {
+        "name": "Personal Matters",
+        "summary": "Wills, estates, and family paperwork."
+      }
+    ]
+  },
+  "church": {
+    "label": "church",
+    "theme": "warm-local",
+    "colors": {
+      "primary": "#4338ca",
+      "accent": "#f59e0b"
+    },
+    "services": [
+      {
+        "name": "Gatherings",
+        "summary": "Worship gatherings."
+      },
+      {
+        "name": "Kids & Youth",
+        "summary": "Programs for children and students."
+      },
+      {
+        "name": "Groups",
+        "summary": "Small groups and classes."
+      },
+      {
+        "name": "Care & Prayer",
+        "summary": "Reach out for prayer or support."
+      }
+    ]
+  },
+  "photography": {
+    "label": "photography",
+    "theme": "clean-minimal",
+    "colors": {
+      "primary": "#18181b",
+      "accent": "#e11d48"
+    },
+    "services": [
+      {
+        "name": "Portraits",
+        "summary": "Individual and family portraits."
+      },
+      {
+        "name": "Events",
+        "summary": "Parties, celebrations, and gatherings."
+      },
+      {
+        "name": "Weddings",
+        "summary": "Wedding day photography."
+      },
+      {
+        "name": "Headshots",
+        "summary": "Headshots for work and profiles."
+      }
+    ]
+  },
+  "pressure-washing": {
+    "label": "pressure washing",
+    "theme": "clean-minimal",
+    "colors": {
+      "primary": "#0369a1",
+      "accent": "#facc15"
+    },
+    "services": [
+      {
+        "name": "House Washing",
+        "summary": "Siding, trim, and entryways."
+      },
+      {
+        "name": "Driveways & Concrete",
+        "summary": "Driveways, sidewalks, and patios."
+      },
+      {
+        "name": "Decks & Fences",
+        "summary": "Wood and composite decks, fences, and railings."
+      },
+      {
+        "name": "Commercial Exteriors",
+        "summary": "Storefronts and other commercial buildings."
+      }
+    ]
+  },
+  "landscaping": {
+    "label": "landscaping",
+    "theme": "clean-minimal",
+    "colors": {
+      "primary": "#15803d",
+      "accent": "#facc15"
+    },
+    "services": [
+      {
+        "name": "Lawn Mowing",
+        "summary": "Mowing, edging, and cleanup."
+      },
+      {
+        "name": "Mulch & Beds",
+        "summary": "Mulch, bed edging, and planting."
+      },
+      {
+        "name": "Tree & Shrub Care",
+        "summary": "Pruning and shaping for trees and shrubs."
+      },
+      {
+        "name": "Yard Cleanup",
+        "summary": "Leaves, branches, and seasonal cleanup."
+      }
+    ]
+  },
+  "plumbing": {
+    "label": "plumbing",
+    "theme": "clean-minimal",
+    "colors": {
+      "primary": "#1e40af",
+      "accent": "#f97316"
+    },
+    "services": [
+      {
+        "name": "Plumbing Repairs",
+        "summary": "Leaks, pipes, and fixtures."
+      },
+      {
+        "name": "Water Heaters",
+        "summary": "Tank and tankless water heaters."
+      },
+      {
+        "name": "Drain Clearing",
+        "summary": "Clogged sinks, tubs, and main lines."
+      },
+      {
+        "name": "Fixture Installs",
+        "summary": "Faucets, toilets, and garbage disposals."
+      }
+    ]
+  },
+  "cleaning-service": {
+    "label": "cleaning service",
+    "theme": "clean-minimal",
+    "colors": {
+      "primary": "#6d28d9",
+      "accent": "#2dd4bf"
+    },
+    "services": [
+      {
+        "name": "Home Cleaning",
+        "summary": "Regular cleaning for houses and apartments."
+      },
+      {
+        "name": "Deep Cleaning",
+        "summary": "A top-to-bottom clean, including the details."
+      },
+      {
+        "name": "Move-In / Move-Out",
+        "summary": "Cleaning for an empty home before or after a move."
+      },
+      {
+        "name": "Office Cleaning",
+        "summary": "Cleaning for offices and workspaces."
+      }
+    ]
+  },
+  "restaurant": {
+    "label": "restaurant",
+    "theme": "clean-minimal",
+    "colors": {
+      "primary": "#b91c1c",
+      "accent": "#f59e0b"
+    },
+    "services": [
+      {
+        "name": "Menu Favorites",
+        "summary": "Your most-ordered dishes go here."
+      },
+      {
+        "name": "Specials",
+        "summary": "Daily or seasonal specials go here."
+      },
+      {
+        "name": "Sides & Extras",
+        "summary": "Sides, add-ons, and extras go here."
+      },
+      {
+        "name": "Groups & Catering",
+        "summary": "Group or catering options go here, if offered."
+      }
+    ]
+  },
+  "auto-detailing": {
+    "label": "auto detailing",
+    "theme": "clean-minimal",
+    "colors": {
+      "primary": "#0891b2",
+      "accent": "#fbbf24"
+    },
+    "services": [
+      {
+        "name": "Exterior Detail",
+        "summary": "Wash, decontamination, and wax."
+      },
+      {
+        "name": "Interior Detail",
+        "summary": "Vacuum, wipe-down, and upholstery care."
+      },
+      {
+        "name": "Paint Correction",
+        "summary": "Polishing to reduce swirls and light scratches."
+      },
+      {
+        "name": "Ceramic Coating",
+        "summary": "Coating applied over the paint."
+      }
+    ]
+  },
+  "handyman": {
+    "label": "handyman",
+    "theme": "clean-minimal",
+    "colors": {
+      "primary": "#b45309",
+      "accent": "#0f766e"
+    },
+    "services": [
+      {
+        "name": "Home Repairs",
+        "summary": "Doors, trim, drywall patches, and small fixes."
+      },
+      {
+        "name": "Mounting & Assembly",
+        "summary": "TVs, shelves, and furniture."
+      },
+      {
+        "name": "Painting",
+        "summary": "Interior rooms, trim, and touch-ups."
+      },
+      {
+        "name": "Fixture Installs",
+        "summary": "Light fixtures, faucets, and hardware."
+      }
+    ]
+  },
+  "generic-business": {
+    "label": "generic business",
+    "theme": "clean-minimal",
+    "colors": {
+      "primary": "#1e40af",
+      "accent": "#f59e0b"
+    },
+    "services": [
+      {
+        "name": "Main Service",
+        "summary": "A short description of this service goes here."
+      },
+      {
+        "name": "Second Service",
+        "summary": "A short description of this service goes here."
+      },
+      {
+        "name": "Third Service",
+        "summary": "A short description of this service goes here."
+      },
+      {
+        "name": "Other Requests",
+        "summary": "Ask about anything not listed here."
+      }
+    ]
+  }
+}

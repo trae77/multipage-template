@@ -1,0 +1,22 @@
+{
+  "_note": "SAMPLE CONTENT. Every item below is placeholder demo data, not a real customer, project or review.",
+  "projects": [
+    { "id": "p1", "title": "Sample project: exterior refresh", "city": "Denver", "summary": "Sample description. Replace with a real job write-up.", "before": "", "after": "", "sample": true },
+    { "id": "p2", "title": "Sample project: repair job", "city": "Aurora", "summary": "Sample description. Replace with a real job write-up.", "before": "", "after": "", "sample": true },
+    { "id": "p3", "title": "Sample project: full replacement", "city": "Lakewood", "summary": "Sample description. Replace with a real job write-up.", "before": "", "after": "", "sample": true }
+  ],
+  "reviews": [
+    { "id": "r1", "author": "Sample Customer A", "text": "Sample review text. Real reviews are added by the owner from actual customers.", "rating": 5, "sample": true },
+    { "id": "r2", "author": "Sample Customer B", "text": "Sample review text. Do not publish invented reviews.", "rating": 5, "sample": true }
+  ],
+  "faq": [
+    { "q": "How do I request a quote?", "a": "Use the Contact / Quote page or call the number at the top of the site." },
+    { "q": "Can I book a visit online?", "a": "Yes. Pick an open time on the Booking page and you will get a confirmation once the owner approves it." },
+    { "q": "Can I see my quotes and project status?", "a": "Yes. Customers get a login to view quotes, invoices, project status, photos and messages." },
+    { "q": "Which areas do you serve?", "a": "See the Service Area page for the current list." }
+  ],
+  "posts": [
+    { "slug": "welcome", "title": "Sample post: welcome to our new site", "date": "2026-10-01", "excerpt": "Sample blog post. Replace with real news or tips.", "body": "This is a **sample** post.\n\nOwners can add posts from the admin dashboard. Posts support simple markdown: **bold**, *italic*, [links](https://example.com) and paragraphs.", "sample": true },
+    { "slug": "seasonal-checklist", "title": "Sample post: seasonal checklist", "date": "2026-09-15", "excerpt": "Sample tips article placeholder.", "body": "Sample checklist content.\n\n- Item one\n- Item two\n- Item three", "sample": true }
+  ]
+}

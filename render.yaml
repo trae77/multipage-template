@@ -1,0 +1,45 @@
+# Render Blueprint (same pattern as trae77/bigfootConstruction):
+# one Node web service serving the built site + /api, SQLite + uploads on a persistent disk.
+# A disk needs a paid instance; free web services have an ephemeral filesystem.
+services:
+  - type: web
+    name: multipage-site
+    runtime: node
+    plan: 0.5c-512mb # Render's $7/mo plan; required for the disk
+    region: oregon
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    disk:
+      name: site-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: DATA_DIR
+        value: /var/data
+      - key: OWNER_EMAIL
+        sync: false
+      - key: OWNER_PASSWORD
+        sync: false
+      - key: SEED_DEMO_DATA
+        value: "false"
+      # Optional notifications (all off unless set)
+      - key: NOTIFY_FROM
+        sync: false
+      - key: NOTIFY_OWNER_EMAIL
+        sync: false
+      - key: NOTIFY_OWNER_PHONE
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: SMTP_URL
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_FROM
+        sync: false

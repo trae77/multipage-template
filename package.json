@@ -1,0 +1,31 @@
+{
+  "name": "multipage-site-template",
+  "version": "0.1.0",
+  "description": "Reusable multi-page small-business site with customer portal and owner dashboard",
+  "main": "server/index.js",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "build:demo": "node tools/build.mjs --demo",
+    "start": "node server/index.js",
+    "dev": "npm run build && OWNER_EMAIL=owner@demo.test OWNER_PASSWORD=demo-owner SEED_DEMO_DATA=true DATA_DIR=./data node server/index.js",
+    "presets": "node tools/make-presets.mjs",
+    "test": "node --test tests/api.test.js",
+    "test:e2e": "npm run build:demo && node tests/smoke.mjs",
+    "screenshots": "npm run build:demo && node tests/screenshots.mjs"
+  },
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "express": "^5.3.0",
+    "multer": "^2.4.0",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "playwright": "^1.64.1"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  }
+}

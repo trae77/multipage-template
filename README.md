@@ -27,6 +27,20 @@ npm run screenshots      # /workspace/mockups/mp-*.png (or MOCKUP_DIR=...)
 
 Demo logins (static demo, and `npm run dev`): owner `owner@demo.test` / `demo-owner`, customer `customer@demo.test` / `demo-customer`.
 
+## Industry feature matrix (spec v5)
+
+`tools/industry-features.json` (vendored from client-site-templates, with helpers in `tools/industry.vendor.mjs`) decides which action page and features each trade may have. `tools/build.mjs` refuses a forbidden `--action`, feature, `--layout` or `--hero` (exit 5, nothing written). Forbidden features that are on by default are switched off. `content.menu` only renders when the action is `order`. Unknown trades build as `generic-business`.
+
+- Override, one id with a required reason: `node tools/build.mjs --trade roofing --allow-feature booking --allow-reason "..."` (or `"allowFeature": {"id": "booking", "reason": "..."}` in site.config.json for the root site). It is recorded in `build.json`.
+- `npm run audit:industry` scans `dist/` and `dist-demo/`.
+- CI: `ci/check.yml` (copy it to `.github/workflows/check.yml`; the push token has no `workflow` scope, so it is not active yet) runs `npm ci`, `npx playwright install chromium`, `npm run build`, `npm test` and `npm run test:e2e` (demos, audit, smoke) on every push and PR.
+
+**Exact pre-push command:**
+
+```bash
+npm ci && npx playwright install chromium && npm run build && npm test && npm run test:e2e
+```
+
 ## Configure a client site
 
 Edit `site.config.json`:

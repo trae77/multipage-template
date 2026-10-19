@@ -1,0 +1,2747 @@
+{
+  "$schema_note": "spec v5 feature matrix. Ids are exact ids from trae77/client-site-templates (tools/library.mjs FEATURES, tools/money.mjs MONEY/MONEY_DEFAULTS, tools/mockup.mjs TRADE_ALIASES) and trae77/multipage-template (presets/industries.json actions, site.config.json features). Read 2026-10-19.",
+  "version": "5.0.0",
+  "ids": {
+    "clientSiteTemplates": {
+      "money": [
+        "quote-form",
+        "emergency-request",
+        "inspection-request",
+        "instant-quote",
+        "job-list",
+        "service-request",
+        "package-picker",
+        "class-schedule",
+        "grooming-booking",
+        "appointment-request",
+        "listing-search",
+        "booking",
+        "pickup-order",
+        "none"
+      ],
+      "features": [
+        "call-bar",
+        "emergency",
+        "badges",
+        "quote-form",
+        "reviews",
+        "map",
+        "before-after",
+        "hours",
+        "booking",
+        "menu",
+        "pickup-order",
+        "process",
+        "checklist",
+        "pricing",
+        "team",
+        "faq"
+      ],
+      "trades": [
+        "auto-detailing",
+        "auto-repair",
+        "church",
+        "cleaning",
+        "cleaning-service",
+        "concrete",
+        "daycare",
+        "dental-medical",
+        "electrician",
+        "fencing",
+        "fitness",
+        "generic-business",
+        "handyman",
+        "hvac",
+        "landscaping",
+        "law-accounting",
+        "moving",
+        "painting",
+        "pest-control",
+        "pet-services",
+        "photography",
+        "plumbing",
+        "pressure-washing",
+        "real-estate",
+        "restaurant",
+        "restaurant-foodtruck",
+        "restaurant-ordering",
+        "roofing",
+        "salon-barber",
+        "tattoo",
+        "tree-service"
+      ]
+    },
+    "multipageTemplate": {
+      "actions": [
+        "quote",
+        "book",
+        "order",
+        "schedule",
+        "listings",
+        "packages"
+      ],
+      "features": [
+        "gallery",
+        "beforeAfter",
+        "reviews",
+        "serviceArea",
+        "faq",
+        "blog",
+        "quoteForm",
+        "quoteBuilder",
+        "booking",
+        "portal",
+        "admin",
+        "callBar",
+        "payInvoice"
+      ]
+    }
+  },
+  "rules": {
+    "failOn": [
+      "money.forbidden",
+      "features.forbidden",
+      "multipage.forbiddenActions",
+      "multipage.forbiddenFeatures",
+      "forbiddenLayouts",
+      "forbiddenHeroes",
+      "unknown trade with any money/feature beyond fallback.allowed"
+    ],
+    "warnOn": [
+      "any id not in this trade's allowed or forbidden lists",
+      "money default overridden by an allowed non-default value",
+      "data file present for a forbidden feature (e.g. menu in content/sample.json on non-food trade)"
+    ],
+    "foodOnly": {
+      "money": [
+        "pickup-order"
+      ],
+      "features": [
+        "menu",
+        "pickup-order"
+      ],
+      "layouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "heroes": [
+        "menu-first"
+      ],
+      "multipageActions": [
+        "order"
+      ]
+    },
+    "override": "--allow-feature <id> with --reason TEXT downgrades one fail to a warning and is logged in the build output"
+  },
+  "trades": {
+    "roofing": {
+      "label": "roofing",
+      "money": {
+        "default": "inspection-request",
+        "allowed": [
+          "inspection-request",
+          "emergency-request",
+          "quote-form"
+        ],
+        "forbidden": [
+          "instant-quote",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "booking",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "before-after",
+          "call-bar",
+          "checklist",
+          "emergency",
+          "faq",
+          "hours",
+          "map",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "booking",
+          "menu",
+          "pickup-order",
+          "pricing"
+        ]
+      },
+      "multipage": {
+        "action": "quote",
+        "allowedFeatures": [
+          "admin",
+          "beforeAfter",
+          "blog",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteBuilder",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "book",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "booking"
+        ]
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "hvac": {
+      "label": "heating & cooling",
+      "money": {
+        "default": "emergency-request",
+        "allowed": [
+          "emergency-request",
+          "inspection-request",
+          "quote-form",
+          "service-request"
+        ],
+        "forbidden": [
+          "instant-quote",
+          "job-list",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "booking",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "call-bar",
+          "checklist",
+          "emergency",
+          "faq",
+          "hours",
+          "map",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "before-after",
+          "booking",
+          "menu",
+          "pickup-order",
+          "pricing"
+        ]
+      },
+      "multipage": {
+        "action": "quote",
+        "allowedFeatures": [
+          "admin",
+          "blog",
+          "booking",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteBuilder",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "book",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "beforeAfter"
+        ]
+      },
+      "note": "booking allowed only as maintenance-visit scheduling add-on",
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "plumbing": {
+      "label": "plumbing",
+      "money": {
+        "default": "emergency-request",
+        "allowed": [
+          "emergency-request",
+          "inspection-request",
+          "quote-form",
+          "service-request"
+        ],
+        "forbidden": [
+          "instant-quote",
+          "job-list",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "booking",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "before-after",
+          "call-bar",
+          "checklist",
+          "emergency",
+          "faq",
+          "hours",
+          "map",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "booking",
+          "menu",
+          "pickup-order",
+          "pricing"
+        ]
+      },
+      "multipage": {
+        "action": "quote",
+        "allowedFeatures": [
+          "admin",
+          "blog",
+          "booking",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteBuilder",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "book",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "beforeAfter"
+        ]
+      },
+      "note": "booking only for scheduled visits",
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "electrician": {
+      "label": "electrical",
+      "money": {
+        "default": "emergency-request",
+        "allowed": [
+          "emergency-request",
+          "inspection-request",
+          "quote-form",
+          "service-request"
+        ],
+        "forbidden": [
+          "instant-quote",
+          "job-list",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "booking",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "call-bar",
+          "checklist",
+          "emergency",
+          "faq",
+          "hours",
+          "map",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "before-after",
+          "booking",
+          "menu",
+          "pickup-order",
+          "pricing"
+        ]
+      },
+      "multipage": {
+        "action": "quote",
+        "allowedFeatures": [
+          "admin",
+          "blog",
+          "booking",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteBuilder",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "book",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "beforeAfter"
+        ]
+      },
+      "note": "booking only for scheduled visits",
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "cleaning-service": {
+      "label": "cleaning",
+      "money": {
+        "default": "instant-quote",
+        "allowed": [
+          "instant-quote",
+          "quote-form",
+          "booking"
+        ],
+        "forbidden": [
+          "emergency-request",
+          "inspection-request",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "before-after",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "pricing",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "booking",
+          "menu",
+          "pickup-order"
+        ]
+      },
+      "multipage": {
+        "action": "quote",
+        "allowedFeatures": [
+          "admin",
+          "beforeAfter",
+          "blog",
+          "booking",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteBuilder",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "book",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": []
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "cleaning": {
+      "label": "cleaning",
+      "aliasOf": "cleaning-service",
+      "money": {
+        "default": "instant-quote",
+        "allowed": [
+          "instant-quote",
+          "quote-form",
+          "booking"
+        ],
+        "forbidden": [
+          "emergency-request",
+          "inspection-request",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "before-after",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "pricing",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "booking",
+          "menu",
+          "pickup-order"
+        ]
+      },
+      "multipage": {
+        "action": "quote",
+        "allowedFeatures": [
+          "admin",
+          "beforeAfter",
+          "blog",
+          "booking",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteBuilder",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "book",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": []
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "pressure-washing": {
+      "label": "pressure washing",
+      "money": {
+        "default": "instant-quote",
+        "allowed": [
+          "instant-quote",
+          "quote-form"
+        ],
+        "forbidden": [
+          "emergency-request",
+          "inspection-request",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "booking",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "before-after",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "pricing",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "booking",
+          "menu",
+          "pickup-order"
+        ]
+      },
+      "multipage": {
+        "action": "quote",
+        "allowedFeatures": [
+          "admin",
+          "beforeAfter",
+          "blog",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteBuilder",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "book",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "booking"
+        ]
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "landscaping": {
+      "label": "landscaping",
+      "money": {
+        "default": "instant-quote",
+        "allowed": [
+          "instant-quote",
+          "quote-form"
+        ],
+        "forbidden": [
+          "emergency-request",
+          "inspection-request",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "booking",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "before-after",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "pricing",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "booking",
+          "menu",
+          "pickup-order"
+        ]
+      },
+      "multipage": {
+        "action": "quote",
+        "allowedFeatures": [
+          "admin",
+          "beforeAfter",
+          "blog",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteBuilder",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "book",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "booking"
+        ]
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "painting": {
+      "label": "painting",
+      "money": {
+        "default": "instant-quote",
+        "allowed": [
+          "instant-quote",
+          "quote-form"
+        ],
+        "forbidden": [
+          "emergency-request",
+          "inspection-request",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "booking",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "before-after",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "pricing",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "booking",
+          "menu",
+          "pickup-order"
+        ]
+      },
+      "multipage": {
+        "action": "quote",
+        "allowedFeatures": [
+          "admin",
+          "beforeAfter",
+          "blog",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteBuilder",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "book",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "booking"
+        ]
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "concrete": {
+      "label": "concrete",
+      "money": {
+        "default": "instant-quote",
+        "allowed": [
+          "instant-quote",
+          "quote-form"
+        ],
+        "forbidden": [
+          "emergency-request",
+          "inspection-request",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "booking",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "before-after",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "pricing",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "booking",
+          "menu",
+          "pickup-order"
+        ]
+      },
+      "multipage": {
+        "action": "quote",
+        "allowedFeatures": [
+          "admin",
+          "beforeAfter",
+          "blog",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteBuilder",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "book",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "booking"
+        ]
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "fencing": {
+      "label": "fencing",
+      "money": {
+        "default": "instant-quote",
+        "allowed": [
+          "instant-quote",
+          "quote-form"
+        ],
+        "forbidden": [
+          "emergency-request",
+          "inspection-request",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "booking",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "before-after",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "pricing",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "booking",
+          "menu",
+          "pickup-order"
+        ]
+      },
+      "multipage": {
+        "action": "quote",
+        "allowedFeatures": [
+          "admin",
+          "beforeAfter",
+          "blog",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteBuilder",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "book",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "booking"
+        ]
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "tree-service": {
+      "label": "tree service",
+      "money": {
+        "default": "quote-form",
+        "allowed": [
+          "quote-form",
+          "instant-quote",
+          "emergency-request"
+        ],
+        "forbidden": [
+          "inspection-request",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "booking",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "before-after",
+          "call-bar",
+          "checklist",
+          "emergency",
+          "faq",
+          "hours",
+          "map",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "booking",
+          "menu",
+          "pickup-order",
+          "pricing"
+        ]
+      },
+      "multipage": {
+        "action": "quote",
+        "allowedFeatures": [
+          "admin",
+          "beforeAfter",
+          "blog",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteBuilder",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "book",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "booking"
+        ]
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "pest-control": {
+      "label": "pest control",
+      "money": {
+        "default": "quote-form",
+        "allowed": [
+          "quote-form",
+          "service-request",
+          "instant-quote"
+        ],
+        "forbidden": [
+          "emergency-request",
+          "inspection-request",
+          "job-list",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "booking",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "pricing",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "before-after",
+          "booking",
+          "menu",
+          "pickup-order"
+        ]
+      },
+      "multipage": {
+        "action": "quote",
+        "allowedFeatures": [
+          "admin",
+          "beforeAfter",
+          "blog",
+          "booking",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteBuilder",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "book",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": []
+      },
+      "note": "schema @type LocalBusiness (PestControl is not a schema.org type)",
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "moving": {
+      "label": "moving",
+      "money": {
+        "default": "quote-form",
+        "allowed": [
+          "quote-form",
+          "instant-quote"
+        ],
+        "forbidden": [
+          "emergency-request",
+          "inspection-request",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "booking",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "pricing",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "before-after",
+          "booking",
+          "menu",
+          "pickup-order"
+        ]
+      },
+      "multipage": {
+        "action": "quote",
+        "allowedFeatures": [
+          "admin",
+          "beforeAfter",
+          "blog",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteBuilder",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "book",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "booking"
+        ]
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "handyman": {
+      "label": "handyman",
+      "money": {
+        "default": "job-list",
+        "allowed": [
+          "job-list",
+          "quote-form",
+          "service-request"
+        ],
+        "forbidden": [
+          "emergency-request",
+          "inspection-request",
+          "instant-quote",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "booking",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "before-after",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "pricing",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "booking",
+          "menu",
+          "pickup-order"
+        ]
+      },
+      "multipage": {
+        "action": "quote",
+        "allowedFeatures": [
+          "admin",
+          "beforeAfter",
+          "blog",
+          "booking",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteBuilder",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "book",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": []
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "auto-repair": {
+      "label": "auto repair",
+      "money": {
+        "default": "service-request",
+        "allowed": [
+          "service-request",
+          "booking",
+          "quote-form"
+        ],
+        "forbidden": [
+          "emergency-request",
+          "inspection-request",
+          "instant-quote",
+          "job-list",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "booking",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "before-after",
+          "menu",
+          "pickup-order",
+          "pricing"
+        ]
+      },
+      "multipage": {
+        "action": "book",
+        "allowedFeatures": [
+          "admin",
+          "blog",
+          "booking",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "quote",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "beforeAfter",
+          "quoteBuilder"
+        ]
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "auto-detailing": {
+      "label": "auto detailing",
+      "money": {
+        "default": "package-picker",
+        "allowed": [
+          "package-picker",
+          "booking",
+          "quote-form"
+        ],
+        "forbidden": [
+          "emergency-request",
+          "inspection-request",
+          "instant-quote",
+          "job-list",
+          "service-request",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "before-after",
+          "booking",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "pricing",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "menu",
+          "pickup-order"
+        ]
+      },
+      "multipage": {
+        "action": "book",
+        "allowedFeatures": [
+          "admin",
+          "beforeAfter",
+          "blog",
+          "booking",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "quote",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "quoteBuilder"
+        ]
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "salon-barber": {
+      "label": "salon & barber",
+      "money": {
+        "default": "booking",
+        "allowed": [
+          "booking"
+        ],
+        "forbidden": [
+          "quote-form",
+          "emergency-request",
+          "inspection-request",
+          "instant-quote",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "booking",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "pricing",
+          "process",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "quote-form",
+          "before-after",
+          "menu",
+          "pickup-order"
+        ]
+      },
+      "multipage": {
+        "action": "book",
+        "allowedFeatures": [
+          "admin",
+          "blog",
+          "booking",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "quote",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "beforeAfter",
+          "quoteBuilder"
+        ]
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "tattoo": {
+      "label": "tattoo",
+      "money": {
+        "default": "booking",
+        "allowed": [
+          "booking",
+          "quote-form"
+        ],
+        "forbidden": [
+          "emergency-request",
+          "inspection-request",
+          "instant-quote",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "booking",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "before-after",
+          "menu",
+          "pickup-order",
+          "pricing"
+        ]
+      },
+      "multipage": {
+        "action": "book",
+        "allowedFeatures": [
+          "admin",
+          "blog",
+          "booking",
+          "callBar",
+          "faq",
+          "gallery",
+          "portal",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "quote",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "beforeAfter",
+          "quoteBuilder",
+          "payInvoice"
+        ]
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "pet-services": {
+      "label": "pet care",
+      "money": {
+        "default": "grooming-booking",
+        "allowed": [
+          "grooming-booking",
+          "booking"
+        ],
+        "forbidden": [
+          "quote-form",
+          "emergency-request",
+          "inspection-request",
+          "instant-quote",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "appointment-request",
+          "listing-search",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "booking",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "pricing",
+          "process",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "quote-form",
+          "before-after",
+          "menu",
+          "pickup-order"
+        ]
+      },
+      "multipage": {
+        "action": "book",
+        "allowedFeatures": [
+          "admin",
+          "blog",
+          "booking",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "quote",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "beforeAfter",
+          "quoteBuilder"
+        ]
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "dental-medical": {
+      "label": "dental & medical",
+      "money": {
+        "default": "appointment-request",
+        "allowed": [
+          "appointment-request",
+          "booking"
+        ],
+        "forbidden": [
+          "quote-form",
+          "emergency-request",
+          "inspection-request",
+          "instant-quote",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "listing-search",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "booking",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "process",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "quote-form",
+          "before-after",
+          "menu",
+          "pickup-order",
+          "pricing"
+        ]
+      },
+      "multipage": {
+        "action": "book",
+        "allowedFeatures": [
+          "admin",
+          "blog",
+          "booking",
+          "callBar",
+          "faq",
+          "gallery",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "quote",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "beforeAfter",
+          "quoteBuilder",
+          "portal",
+          "payInvoice"
+        ]
+      },
+      "note": "button label \"Request a Visit\"; portal off; no health details in forms",
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "daycare": {
+      "label": "daycare",
+      "money": {
+        "default": "booking",
+        "allowed": [
+          "booking",
+          "quote-form"
+        ],
+        "forbidden": [
+          "emergency-request",
+          "inspection-request",
+          "instant-quote",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "booking",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "pricing",
+          "process",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "quote-form",
+          "before-after",
+          "menu",
+          "pickup-order"
+        ]
+      },
+      "multipage": {
+        "action": "book",
+        "allowedFeatures": [
+          "admin",
+          "blog",
+          "booking",
+          "callBar",
+          "faq",
+          "gallery",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "quote",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "beforeAfter",
+          "quoteBuilder",
+          "portal",
+          "payInvoice"
+        ]
+      },
+      "note": "booking = tour/enrollment request",
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "law-accounting": {
+      "label": "law & accounting",
+      "money": {
+        "default": "quote-form",
+        "allowed": [
+          "quote-form",
+          "booking"
+        ],
+        "forbidden": [
+          "emergency-request",
+          "inspection-request",
+          "instant-quote",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "booking",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "pricing",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "before-after",
+          "menu",
+          "pickup-order"
+        ]
+      },
+      "multipage": {
+        "action": "book",
+        "allowedFeatures": [
+          "admin",
+          "blog",
+          "booking",
+          "callBar",
+          "faq",
+          "gallery",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "quote",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "beforeAfter",
+          "quoteBuilder",
+          "portal",
+          "payInvoice"
+        ]
+      },
+      "note": "consultation request; multipage uses book, client-site-templates uses quote-form — both allowed",
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "fitness": {
+      "label": "fitness",
+      "money": {
+        "default": "class-schedule",
+        "allowed": [
+          "class-schedule",
+          "booking"
+        ],
+        "forbidden": [
+          "quote-form",
+          "emergency-request",
+          "inspection-request",
+          "instant-quote",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "booking",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "pricing",
+          "process",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "quote-form",
+          "before-after",
+          "menu",
+          "pickup-order"
+        ]
+      },
+      "multipage": {
+        "action": "schedule",
+        "allowedFeatures": [
+          "admin",
+          "blog",
+          "booking",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "quote",
+          "book",
+          "order",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "beforeAfter",
+          "quoteBuilder"
+        ]
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "church": {
+      "label": "church",
+      "money": {
+        "default": null,
+        "allowed": [],
+        "forbidden": [
+          "quote-form",
+          "emergency-request",
+          "inspection-request",
+          "instant-quote",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "booking",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "call-bar",
+          "map",
+          "hours",
+          "faq",
+          "team",
+          "process"
+        ],
+        "forbidden": [
+          "emergency",
+          "badges",
+          "quote-form",
+          "reviews",
+          "before-after",
+          "booking",
+          "menu",
+          "pickup-order",
+          "checklist",
+          "pricing"
+        ]
+      },
+      "multipage": {
+        "action": "schedule",
+        "allowedFeatures": [
+          "blog",
+          "callBar",
+          "faq",
+          "gallery",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "quote",
+          "book",
+          "order",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "beforeAfter",
+          "quoteBuilder",
+          "booking",
+          "portal",
+          "admin",
+          "payInvoice"
+        ]
+      },
+      "note": "no money feature; schedule = service times",
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "real-estate": {
+      "label": "real estate",
+      "money": {
+        "default": "listing-search",
+        "allowed": [
+          "listing-search",
+          "quote-form",
+          "booking"
+        ],
+        "forbidden": [
+          "emergency-request",
+          "inspection-request",
+          "instant-quote",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "booking",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "before-after",
+          "menu",
+          "pickup-order",
+          "pricing"
+        ]
+      },
+      "multipage": {
+        "action": "listings",
+        "allowedFeatures": [
+          "admin",
+          "blog",
+          "booking",
+          "callBar",
+          "faq",
+          "gallery",
+          "portal",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "quote",
+          "book",
+          "order",
+          "schedule",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "beforeAfter",
+          "quoteBuilder",
+          "payInvoice"
+        ]
+      },
+      "note": "--listings-file needs --brokerage",
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "photography": {
+      "label": "photography",
+      "money": {
+        "default": "package-picker",
+        "allowed": [
+          "package-picker",
+          "booking"
+        ],
+        "forbidden": [
+          "quote-form",
+          "emergency-request",
+          "inspection-request",
+          "instant-quote",
+          "job-list",
+          "service-request",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "booking",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "pricing",
+          "process",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "quote-form",
+          "before-after",
+          "menu",
+          "pickup-order"
+        ]
+      },
+      "multipage": {
+        "action": "packages",
+        "allowedFeatures": [
+          "admin",
+          "blog",
+          "booking",
+          "callBar",
+          "faq",
+          "gallery",
+          "payInvoice",
+          "portal",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "quote",
+          "book",
+          "order",
+          "schedule",
+          "listings"
+        ],
+        "forbiddenFeatures": [
+          "beforeAfter",
+          "quoteBuilder"
+        ]
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    },
+    "restaurant": {
+      "label": "restaurant & food truck",
+      "money": {
+        "default": "pickup-order",
+        "allowed": [
+          "pickup-order"
+        ],
+        "forbidden": [
+          "quote-form",
+          "emergency-request",
+          "inspection-request",
+          "instant-quote",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "booking"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "menu",
+          "pickup-order",
+          "process",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "quote-form",
+          "before-after",
+          "booking",
+          "pricing"
+        ]
+      },
+      "multipage": {
+        "action": "order",
+        "allowedFeatures": [
+          "admin",
+          "blog",
+          "callBar",
+          "faq",
+          "gallery",
+          "portal",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "quote",
+          "book",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "beforeAfter",
+          "quoteBuilder",
+          "booking",
+          "payInvoice"
+        ]
+      },
+      "note": "pickup-order needs --menu-file; without it build falls back to menu + call (NOT quote-form)"
+    },
+    "restaurant-foodtruck": {
+      "label": "restaurant & food truck",
+      "aliasOf": "restaurant",
+      "money": {
+        "default": "pickup-order",
+        "allowed": [
+          "pickup-order"
+        ],
+        "forbidden": [
+          "quote-form",
+          "emergency-request",
+          "inspection-request",
+          "instant-quote",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "booking"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "menu",
+          "pickup-order",
+          "process",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "quote-form",
+          "before-after",
+          "booking",
+          "pricing"
+        ]
+      },
+      "multipage": {
+        "action": "order",
+        "allowedFeatures": [
+          "admin",
+          "blog",
+          "callBar",
+          "faq",
+          "gallery",
+          "portal",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "quote",
+          "book",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "beforeAfter",
+          "quoteBuilder",
+          "booking",
+          "payInvoice"
+        ]
+      }
+    },
+    "restaurant-ordering": {
+      "label": "restaurant & food truck",
+      "aliasOf": "restaurant",
+      "money": {
+        "default": "pickup-order",
+        "allowed": [
+          "pickup-order"
+        ],
+        "forbidden": [
+          "quote-form",
+          "emergency-request",
+          "inspection-request",
+          "instant-quote",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "booking"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "menu",
+          "pickup-order",
+          "process",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "quote-form",
+          "before-after",
+          "booking",
+          "pricing"
+        ]
+      },
+      "multipage": {
+        "action": "order",
+        "allowedFeatures": [
+          "admin",
+          "blog",
+          "callBar",
+          "faq",
+          "gallery",
+          "portal",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "quote",
+          "book",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "beforeAfter",
+          "quoteBuilder",
+          "booking",
+          "payInvoice"
+        ]
+      }
+    },
+    "generic-business": {
+      "label": "generic business",
+      "money": {
+        "default": "quote-form",
+        "allowed": [
+          "quote-form"
+        ],
+        "forbidden": [
+          "emergency-request",
+          "inspection-request",
+          "instant-quote",
+          "job-list",
+          "service-request",
+          "package-picker",
+          "class-schedule",
+          "grooming-booking",
+          "appointment-request",
+          "listing-search",
+          "booking",
+          "pickup-order"
+        ]
+      },
+      "features": {
+        "allowed": [
+          "badges",
+          "call-bar",
+          "checklist",
+          "faq",
+          "hours",
+          "map",
+          "process",
+          "quote-form",
+          "reviews",
+          "team"
+        ],
+        "forbidden": [
+          "emergency",
+          "before-after",
+          "booking",
+          "menu",
+          "pickup-order",
+          "pricing"
+        ]
+      },
+      "multipage": {
+        "action": "quote",
+        "allowedFeatures": [
+          "admin",
+          "blog",
+          "callBar",
+          "faq",
+          "gallery",
+          "portal",
+          "quoteForm",
+          "reviews",
+          "serviceArea"
+        ],
+        "forbiddenActions": [
+          "book",
+          "order",
+          "schedule",
+          "listings",
+          "packages"
+        ],
+        "forbiddenFeatures": [
+          "beforeAfter",
+          "quoteBuilder",
+          "booking",
+          "payInvoice"
+        ]
+      },
+      "forbiddenLayouts": [
+        "rest-order",
+        "rest-dine",
+        "truck-where"
+      ],
+      "forbiddenHeroes": [
+        "menu-first"
+      ]
+    }
+  },
+  "fallback": {
+    "_applies_to": "any trade id not in trades (including unknown aliases resolved to generic-business by --trade typo)",
+    "label": "unknown trade",
+    "denyByDefault": true,
+    "money": {
+      "default": "quote-form",
+      "allowed": [
+        "quote-form"
+      ],
+      "forbidden": [
+        "emergency-request",
+        "inspection-request",
+        "instant-quote",
+        "job-list",
+        "service-request",
+        "package-picker",
+        "class-schedule",
+        "grooming-booking",
+        "appointment-request",
+        "listing-search",
+        "booking",
+        "pickup-order"
+      ]
+    },
+    "features": {
+      "allowed": [
+        "call-bar",
+        "map",
+        "faq",
+        "reviews",
+        "hours"
+      ],
+      "forbidden": [
+        "emergency",
+        "badges",
+        "quote-form",
+        "before-after",
+        "booking",
+        "menu",
+        "pickup-order",
+        "process",
+        "checklist",
+        "pricing",
+        "team"
+      ]
+    },
+    "multipage": {
+      "action": "quote",
+      "allowedFeatures": [
+        "gallery",
+        "reviews",
+        "serviceArea",
+        "faq",
+        "callBar",
+        "quoteForm"
+      ],
+      "forbiddenActions": [
+        "book",
+        "order",
+        "schedule",
+        "listings",
+        "packages"
+      ]
+    },
+    "forbiddenLayouts": [
+      "rest-order",
+      "rest-dine",
+      "truck-where"
+    ],
+    "forbiddenHeroes": [
+      "menu-first"
+    ]
+  },
+  "auditMarkers": {
+    "_note": "Not part of the spec v5 matrix: HTML patterns used by npm run audit:industry. A marker is a leak when none of its ids is allowed (money.allowed or features.allowed) for the page trade.",
+    "food ordering / menu": {
+      "ids": [
+        "pickup-order",
+        "menu"
+      ],
+      "patterns": [
+        "order/order\\.js",
+        "class=\"order-static",
+        "<section[^>]*id=\"(menu|order)\"",
+        "data-kind=\"pickup-order\"",
+        ">\\s*Order [Pp]ickup\\s*<",
+        "add to cart"
+      ]
+    },
+    "booking": {
+      "ids": [
+        "booking",
+        "grooming-booking",
+        "appointment-request"
+      ],
+      "patterns": [
+        "<section[^>]*id=\"booking\"",
+        "data-kind=\"(booking|grooming-booking|appointment-request)\"",
+        "booking-embed",
+        "href=\"[^\"]*book/\"[^>]*>\\s*Book"
+      ]
+    },
+    "listings": {
+      "ids": [
+        "listing-search"
+      ],
+      "patterns": [
+        "data-kind=\"listing-search\"",
+        "class=\"m-listing",
+        "data-filter=beds",
+        "href=\"[^\"]*listings/\""
+      ]
+    },
+    "class schedule": {
+      "ids": [
+        "class-schedule"
+      ],
+      "patterns": [
+        "data-kind=\"class-schedule\"",
+        "class=\"m-schedule",
+        "class=\"hero-strip"
+      ]
+    },
+    "emergency": {
+      "ids": [
+        "emergency",
+        "emergency-request"
+      ],
+      "patterns": [
+        "data-kind=\"emergency-request\"",
+        "class=\"emergency-banner",
+        "class=\"hero-band",
+        "hero--emergency"
+      ]
+    },
+    "prices": {
+      "ids": [
+        "pricing"
+      ],
+      "patterns": [
+        "<section[^>]*id=\"pricing\""
+      ]
+    }
+  }
+}

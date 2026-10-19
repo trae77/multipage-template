@@ -4,6 +4,7 @@
 //   node tools/build.mjs --demo                -> dist-demo/   (browser-only, localStorage mock data)
 // Options: --config site.config.json --trade roofing --theme premium-dark --out dir --site-url https://...
 import { schemaType, parseHoursJson } from './schema.vendor.mjs';
+import { MATRIX, tradeRules, parseOverride, checkTrade, failMessage } from './industry.vendor.mjs';
 import { PALETTES, resolveDesign, fontLinks, fontCss } from './design.vendor.mjs';
 import { resolveHome, homeBody, HERO_CSS } from './home.mjs';
 import fs from 'node:fs'; import path from 'node:path'; import url from 'node:url';
@@ -26,14 +27,31 @@ content.posts = (fs.existsSync(BLOG_DIR) ? fs.readdirSync(BLOG_DIR).filter((f) =
   return { slug: f.replace(/\.md$/, '').replace(/^\d{4}-\d{2}-\d{2}-/, ''), title: meta.title || f, date: meta.date || '', excerpt: meta.excerpt || '', author: meta.author || '', sample: meta.sample === 'true', body: m ? m[2] : raw };
 }).sort((a, b) => String(b.date).localeCompare(a.date));
 const IND = readJson('presets/industries.json');
-const trade = TRADES[tradeKey];
-if (!trade) { console.error(`Unknown trade "${tradeKey}". Options: ${Object.keys(TRADES).join(', ')}`); process.exit(1); }
+// Spec v5: unknown trades build as generic-business under the deny-by-default fallback rules (warned below).
+const RULES = tradeRules(tradeKey);
+const trade = TRADES[tradeKey] || TRADES['generic-business'];
 const themeKey = opt('theme', cfg.theme || trade.theme);
 if (!THEMES[themeKey]) { console.error(`Unknown theme "${themeKey}". Options: ${Object.keys(THEMES).join(', ')}`); process.exit(1); }
 const OUT = path.resolve(ROOT, opt('out', DEMO ? 'dist-demo' : 'dist'));
 const siteUrl = (opt('site-url', cfg.siteUrl) || '').replace(/\/$/, '');
 const B = cfg.business; const F = { ...(cfg.features || {}) };
-const ACTION = opt('action', cfg.actionPage) || ['book', 'order', 'schedule', 'listings', 'packages'].find((k) => IND[k].includes(tradeKey)) || 'quote';
+// Spec v5 trade x feature check (tools/industry-features.json): action, on-features, layout, hero.
+const SAME_TRADE = tradeKey === (cfg.trade || 'generic-business'); // --trade demos don't inherit the main config's feature overrides
+let OVERRIDE; try { OVERRIDE = parseOverride(opt('allow-feature', SAME_TRADE ? cfg.allowFeature?.id : undefined), opt('allow-reason', SAME_TRADE ? cfg.allowFeature?.reason : undefined)); } catch (e) { console.error(`✗ ${e.message}`); process.exit(5); }
+const ACTION = opt('action', SAME_TRADE ? cfg.actionPage : undefined) || RULES.rules.multipage?.action || 'quote';
+const MP_FORBIDDEN = RULES.rules.multipage?.forbiddenFeatures || []; const MP_ALLOWED = RULES.rules.multipage?.allowedFeatures || [];
+const BUILD_WARNS = [];
+if (!SAME_TRADE) delete F.booking; // booking follows the matrix on --trade demos, not the main config
+for (const id of MATRIX.ids.multipageTemplate.features) {
+  const explicit = SAME_TRADE && cfg.features?.[id] === true;
+  const on = id === 'quoteBuilder' ? Boolean(F[id]) : F[id] !== false;
+  const bad = MP_FORBIDDEN.includes(id) || (RULES.unknown && !MP_ALLOWED.includes(id));
+  if (on && bad && !explicit && OVERRIDE?.id !== id) { F[id] = false; if (cfg.features?.[id] === true) BUILD_WARNS.push(`feature ${id} from site.config.json is off for trade "${tradeKey}"`); }
+}
+const CHECK = checkTrade(RULES, [['action', ACTION, opt('action') ? '--action' : SAME_TRADE && cfg.actionPage ? 'site.config.json actionPage' : 'trade default'],
+  ...MATRIX.ids.multipageTemplate.features.filter((id) => (id === 'quoteBuilder' ? F[id] : F[id] !== false)).map((id) => ['multipage feature', id, SAME_TRADE && cfg.features?.[id] === true ? 'site.config.json features' : 'default on'])], OVERRIDE);
+// Food data only renders on food trades (content/sample.json ships a menu).
+if ((content.menu || []).length && ACTION !== 'order') { if ((RULES.rules.features?.forbidden || []).includes('menu') || RULES.unknown) BUILD_WARNS.push(`content.menu is present but trade "${tradeKey}" may not show a menu; not rendered`); content.menu = []; }
 const ACTION_LABEL = cfg.actionLabel || (tradeKey === 'dental-medical' ? 'Request a Visit' : IND.labels[ACTION]);
 // Medical: no portal on this stack (no HIPAA BAA). Link to the practice's own patient portal instead.
 const MEDICAL = IND.portalOff.includes(tradeKey); if (MEDICAL) F.portal = false;
@@ -43,6 +61,9 @@ const PALETTE = resolveDesign('palette', opt('palette', cfg.palette), tradeKey, 
 const FONTS = resolveDesign('fonts', opt('fonts', cfg.fonts), tradeKey, tradeKey);
 // Opt-in home layout + hero (spec v4 A3/A4): --layout auto|<id>, --hero <id>, --hero-image (or cfg.layout / cfg.hero / cfg.heroImage).
 const HOME = resolveHome(cfg, opt, resolveDesign, tradeKey);
+{ const c2 = checkTrade(RULES, [['layout', HOME?.layout, opt('layout') ? '--layout' : 'layout'], ['hero', HOME?.hero, opt('hero') ? '--hero' : 'layout default hero']], OVERRIDE);
+  const fails = [...CHECK.fails, ...c2.fails]; [...BUILD_WARNS, ...CHECK.warns, ...c2.warns].forEach((w) => console.warn(`! ${w}`));
+  if (fails.length) { console.error(`✗ ${failMessage(RULES, fails).replace('--allow-reason "TEXT"', '--allow-reason "TEXT" (or "allowFeature": {"id","reason"} in site.config.json)')}`); process.exit(5); } }
 const primary = cfg.colors?.primary || (PALETTE && PALETTES[PALETTE].primary) || trade.colors?.primary || '#1e3a8a';
 const accent = cfg.colors?.accent || (PALETTE && PALETTES[PALETTE].accent) || trade.colors?.accent || '#f59e0b';
 const dark = THEMES[themeKey].dark;
@@ -261,5 +282,5 @@ page('admin/', { title: 'Owner dashboard', page: 'admin', noindex: true, descrip
 
 fs.writeFileSync(path.join(OUT, 'robots.txt'), DEMO ? 'User-agent: *\nDisallow: /\n' : `User-agent: *\nDisallow: /login/\nDisallow: /portal/\nDisallow: /admin/\nDisallow: /api/\n${siteUrl ? `Sitemap: ${siteUrl}/sitemap.xml\n` : ''}`);
 fs.writeFileSync(path.join(OUT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemap.map((r) => `  <url><loc>${esc(`${siteUrl}/${r}`)}</loc></url>`).join('\n')}\n</urlset>\n`);
-fs.writeFileSync(path.join(OUT, 'build.json'), JSON.stringify({ mode: DEMO ? 'demo' : 'api', trade: tradeKey, theme: themeKey, layout: HOME?.layout || null, hero: HOME?.hero || null, heroImage: HOME?.heroImage || null, pages: sitemap.length }, null, 2));
+fs.writeFileSync(path.join(OUT, 'build.json'), JSON.stringify({ mode: DEMO ? 'demo' : 'api', trade: tradeKey, theme: themeKey, layout: HOME?.layout || null, hero: HOME?.hero || null, heroImage: HOME?.heroImage || null, allowFeature: OVERRIDE?.id || null, pages: sitemap.length }, null, 2));
 console.log(`Built ${DEMO ? 'demo' : 'server'} site → ${path.relative(ROOT, OUT)} (trade ${tradeKey}, theme ${themeKey}, ${sitemap.length} indexed pages)`);

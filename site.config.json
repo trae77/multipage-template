@@ -32,7 +32,7 @@
     "faq": true,
     "blog": true,
     "quoteForm": true,
-    "booking": true,
+    "booking": false,
     "portal": true,
     "admin": true,
     "callBar": true,

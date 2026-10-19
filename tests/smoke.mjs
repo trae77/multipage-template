@@ -17,7 +17,7 @@ for (const width of [390, 1440]) {
   const go = (p) => page.goto(srv.url + p, { waitUntil: 'load' });
   const noOverflow = async () => assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'horizontal overflow');
 
-  for (const p of ['', 'services/', 'about/', 'gallery/', 'quote/', 'reviews/', 'service-area/', 'faq/', 'blog/', 'blog/welcome/', 'contact/', 'book/', 'login/'])
+  for (const p of ['', 'services/', 'about/', 'gallery/', 'quote/', 'reviews/', 'service-area/', 'faq/', 'blog/', 'blog/welcome/', 'contact/', 'login/'])
     await step(`page /${p} loads, demo banner, no overflow, labeled inputs`, async () => {
       await go(p); assert.match(await page.locator('.demo-banner').innerText(), /Demo mode, sample data/); await noOverflow();
       const unlabeled = await page.evaluate(() => [...document.querySelectorAll('input:not([type=hidden]),select,textarea')].filter((e) => !e.labels?.length && !e.getAttribute('aria-label')).length);
@@ -52,13 +52,16 @@ for (const width of [390, 1440]) {
   await step('SEO: JSON-LD LocalBusiness + meta description', async () => { await go(''); const ld = JSON.parse(await page.locator('script[type="application/ld+json"]').first().textContent()); assert.equal(ld['@type'], 'RoofingContractor'); assert.ok(!('aggregateRating' in ld) && !('review' in ld)); assert.ok(await page.locator('meta[name=description]').getAttribute('content')); });
   await step('quote form submits to leads', async () => { await go('contact/'); await page.click('button[type=submit]'); assert.match(await page.locator('.status').innerText(), /fill in/);
     await page.fill('#lf-name', 'Smoke Lead'); await page.fill('#lf-phone', '555-0000'); await page.fill('#lf-msg', 'Smoke test request'); await page.click('button[type=submit]'); assert.match(await page.locator('.status').innerText(), /Thanks/); });
-  await step('booking picks a slot', async () => { await go('book/'); await page.fill('#bk-date', nextBookable()); await page.dispatchEvent('#bk-date', 'change');
+  await step('booking picks a slot (salon demo; roofing has no booking page per spec v5)', async () => { await go('demos/salon-barber/book/'); await page.fill('#bk-date', nextBookable()); await page.dispatchEvent('#bk-date', 'change');
     await page.locator('#bk-slots button:not([disabled])').first().click(); await page.fill('#bk-name', 'Smoke Booker'); await page.fill('#bk-phone', '555-0001'); await page.click('#book-form button[type=submit]'); assert.match(await page.locator('#book-form .status').innerText(), /Requested/); });
+  await step('salon owner sees the booking', async () => { await go('demos/salon-barber/login/'); await page.fill('#li-email', 'owner@demo.test'); await page.fill('#li-pass', 'demo-owner'); await page.click('#login-form button'); await page.waitForURL(/admin\//);
+    await page.click('[data-tab=bookings]'); await page.waitForSelector('text=Smoke Booker'); await go('demos/salon-barber/login/'); const lo = page.locator('[data-logout], button:has-text("Log out")').first(); if (await lo.count()) await lo.click().catch(() => {}); });
+  await step('spec v5: no booking or menu on roofing / restaurant', async () => { await go(''); assert.equal(await page.locator('a[href$="book/"]').count(), 0); assert.equal(await page.locator('#menu, a[href$="menu/"]').count(), 0);
+    await go('demos/restaurant/'); assert.equal(await page.locator('a[href$="book/"]').count(), 0); });
   await step('owner login → dashboard: lead visible, build + send quote', async () => {
     await go('login/'); assert.match(await page.locator('.demo-logins').innerText(), /owner@demo\.test/);
     await page.fill('#li-email', 'owner@demo.test'); await page.fill('#li-pass', 'demo-owner'); await page.click('#login-form button'); await page.waitForURL(/admin\//);
     await page.waitForSelector('.stats'); await page.click('[data-tab=leads]'); await page.waitForSelector('text=Smoke Lead');
-    await page.click('[data-tab=bookings]'); await page.waitForSelector('text=Smoke Booker');
     await page.click('[data-tab=quotes]'); await page.fill('#qb-t', 'Smoke quote'); await page.fill('#ld-1', 'Smoke line'); await page.fill('#lq-1', '2'); await page.fill('#lu-1', '10');
     assert.equal(await page.locator('#qb-total').innerText(), '$20.00'); await page.click('#qb button[value=sent]'); await page.waitForSelector('h3:has-text("Smoke quote")');
     await page.click('[data-tab=posts]'); await page.fill('#pf-t', 'Smoke post'); await page.fill('#pf-b', 'Hello **world**'); await page.click('#pf button[type=submit]'); await page.waitForSelector('text=Smoke post');

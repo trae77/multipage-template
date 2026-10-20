@@ -1,6 +1,6 @@
 {
-  "$schema_note": "spec v5 feature matrix. Ids are exact ids from trae77/client-site-templates (tools/library.mjs FEATURES, tools/money.mjs MONEY/MONEY_DEFAULTS, tools/mockup.mjs TRADE_ALIASES) and trae77/multipage-template (presets/industries.json actions, site.config.json features). Read 2026-10-19.",
-  "version": "5.0.0",
+  "$schema_note": "spec v5.1 feature matrix. Base: tools/industry-features.json at client-site-templates 7158230 (identical in multipage-template 0dd07b5). Layout/hero ids from tools/design.mjs; aliases from tools/mockup.mjs TRADE_ALIASES + tools/library.mjs CATEGORIES/EXTRA_ALIASES at 7158230.",
+  "version": "5.1.0",
   "ids": {
     "clientSiteTemplates": {
       "money": [
@@ -95,7 +95,46 @@
         "callBar",
         "payInvoice"
       ]
-    }
+    },
+    "layouts": [
+      "trade-lead",
+      "trade-emergency",
+      "trade-proof",
+      "home-quote",
+      "home-visual",
+      "auto-service",
+      "auto-packages",
+      "salon-book",
+      "salon-look",
+      "salon-team",
+      "rest-order",
+      "rest-dine",
+      "truck-where",
+      "fit-schedule",
+      "fit-first-visit",
+      "fit-community",
+      "pet-book",
+      "pet-trust",
+      "care-visit",
+      "care-proof",
+      "care-calm",
+      "re-search",
+      "re-seller",
+      "re-agent",
+      "photo-portfolio",
+      "photo-packages"
+    ],
+    "heroes": [
+      "split",
+      "centered",
+      "media",
+      "search",
+      "schedule",
+      "menu-first",
+      "portfolio",
+      "proof",
+      "emergency"
+    ]
   },
   "rules": {
     "failOn": [
@@ -105,7 +144,11 @@
       "multipage.forbiddenFeatures",
       "forbiddenLayouts",
       "forbiddenHeroes",
-      "unknown trade with any money/feature beyond fallback.allowed"
+      "unknown trade with any money/feature beyond fallback.allowed",
+      "layouts.forbidden",
+      "heroes.forbidden",
+      "features.forbidden includes pricing on every trade (override only via --allow-feature pricing + --allow-reason + --pricing-file)",
+      "page has no trade record (pageTradeRecord) in export/CI builds"
     ],
     "warnOn": [
       "any id not in this trade's allowed or forbidden lists",
@@ -132,7 +175,17 @@
         "order"
       ]
     },
-    "override": "--allow-feature <id> with --reason TEXT downgrades one fail to a warning and is logged in the build output"
+    "override": "--allow-feature <id> with --reason TEXT downgrades one fail to a warning and is logged in the build output",
+    "noPrices": {
+      "feature": "pricing",
+      "forbiddenEverywhere": true,
+      "overrideNeeds": [
+        "--allow-feature pricing",
+        "--allow-reason",
+        "--pricing-file"
+      ],
+      "alsoForbidden": "price text in money/menu output is governed by menu-file / package data only; templates never print sample prices"
+    }
   },
   "trades": {
     "roofing": {
@@ -207,13 +260,83 @@
         ]
       },
       "forbiddenLayouts": [
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio"
+      ],
+      "layouts": {
+        "allowed": [
+          "trade-lead",
+          "trade-proof",
+          "trade-emergency"
+        ],
+        "forbidden": [
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof",
+          "emergency"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio"
+        ]
+      }
     },
     "hvac": {
       "label": "heating & cooling",
@@ -288,13 +411,83 @@
       },
       "note": "booking allowed only as maintenance-visit scheduling add-on",
       "forbiddenLayouts": [
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio"
+      ],
+      "layouts": {
+        "allowed": [
+          "trade-lead",
+          "trade-proof",
+          "trade-emergency"
+        ],
+        "forbidden": [
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof",
+          "emergency"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio"
+        ]
+      }
     },
     "plumbing": {
       "label": "plumbing",
@@ -369,13 +562,83 @@
       },
       "note": "booking only for scheduled visits",
       "forbiddenLayouts": [
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio"
+      ],
+      "layouts": {
+        "allowed": [
+          "trade-lead",
+          "trade-proof",
+          "trade-emergency"
+        ],
+        "forbidden": [
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof",
+          "emergency"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio"
+        ]
+      }
     },
     "electrician": {
       "label": "electrical",
@@ -450,13 +713,83 @@
       },
       "note": "booking only for scheduled visits",
       "forbiddenLayouts": [
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio"
+      ],
+      "layouts": {
+        "allowed": [
+          "trade-lead",
+          "trade-proof",
+          "trade-emergency"
+        ],
+        "forbidden": [
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof",
+          "emergency"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio"
+        ]
+      }
     },
     "cleaning-service": {
       "label": "cleaning",
@@ -489,7 +822,6 @@
           "faq",
           "hours",
           "map",
-          "pricing",
           "process",
           "quote-form",
           "reviews",
@@ -499,7 +831,8 @@
           "emergency",
           "booking",
           "menu",
-          "pickup-order"
+          "pickup-order",
+          "pricing"
         ]
       },
       "multipage": {
@@ -529,13 +862,85 @@
         "forbiddenFeatures": []
       },
       "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "trade-proof",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "home-quote",
+          "home-visual"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "trade-proof",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     },
     "cleaning": {
       "label": "cleaning",
@@ -569,7 +974,6 @@
           "faq",
           "hours",
           "map",
-          "pricing",
           "process",
           "quote-form",
           "reviews",
@@ -579,7 +983,8 @@
           "emergency",
           "booking",
           "menu",
-          "pickup-order"
+          "pickup-order",
+          "pricing"
         ]
       },
       "multipage": {
@@ -609,13 +1014,85 @@
         "forbiddenFeatures": []
       },
       "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "trade-proof",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "home-quote",
+          "home-visual"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "trade-proof",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     },
     "pressure-washing": {
       "label": "pressure washing",
@@ -648,7 +1125,6 @@
           "faq",
           "hours",
           "map",
-          "pricing",
           "process",
           "quote-form",
           "reviews",
@@ -658,7 +1134,8 @@
           "emergency",
           "booking",
           "menu",
-          "pickup-order"
+          "pickup-order",
+          "pricing"
         ]
       },
       "multipage": {
@@ -689,13 +1166,85 @@
         ]
       },
       "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "trade-proof",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "home-quote",
+          "home-visual"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "trade-proof",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     },
     "landscaping": {
       "label": "landscaping",
@@ -728,7 +1277,6 @@
           "faq",
           "hours",
           "map",
-          "pricing",
           "process",
           "quote-form",
           "reviews",
@@ -738,7 +1286,8 @@
           "emergency",
           "booking",
           "menu",
-          "pickup-order"
+          "pickup-order",
+          "pricing"
         ]
       },
       "multipage": {
@@ -769,13 +1318,85 @@
         ]
       },
       "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "trade-proof",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "home-quote",
+          "home-visual"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "trade-proof",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     },
     "painting": {
       "label": "painting",
@@ -808,7 +1429,6 @@
           "faq",
           "hours",
           "map",
-          "pricing",
           "process",
           "quote-form",
           "reviews",
@@ -818,7 +1438,8 @@
           "emergency",
           "booking",
           "menu",
-          "pickup-order"
+          "pickup-order",
+          "pricing"
         ]
       },
       "multipage": {
@@ -849,13 +1470,83 @@
         ]
       },
       "forbiddenLayouts": [
+        "trade-emergency",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "trade-lead",
+          "trade-proof",
+          "home-quote",
+          "home-visual"
+        ],
+        "forbidden": [
+          "trade-emergency",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     },
     "concrete": {
       "label": "concrete",
@@ -888,7 +1579,6 @@
           "faq",
           "hours",
           "map",
-          "pricing",
           "process",
           "quote-form",
           "reviews",
@@ -898,7 +1588,8 @@
           "emergency",
           "booking",
           "menu",
-          "pickup-order"
+          "pickup-order",
+          "pricing"
         ]
       },
       "multipage": {
@@ -929,13 +1620,83 @@
         ]
       },
       "forbiddenLayouts": [
+        "trade-emergency",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "trade-lead",
+          "trade-proof",
+          "home-quote",
+          "home-visual"
+        ],
+        "forbidden": [
+          "trade-emergency",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     },
     "fencing": {
       "label": "fencing",
@@ -968,7 +1729,6 @@
           "faq",
           "hours",
           "map",
-          "pricing",
           "process",
           "quote-form",
           "reviews",
@@ -978,7 +1738,8 @@
           "emergency",
           "booking",
           "menu",
-          "pickup-order"
+          "pickup-order",
+          "pricing"
         ]
       },
       "multipage": {
@@ -1009,13 +1770,83 @@
         ]
       },
       "forbiddenLayouts": [
+        "trade-emergency",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "trade-lead",
+          "trade-proof",
+          "home-quote",
+          "home-visual"
+        ],
+        "forbidden": [
+          "trade-emergency",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     },
     "tree-service": {
       "label": "tree service",
@@ -1089,13 +1920,81 @@
         ]
       },
       "forbiddenLayouts": [
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio"
+      ],
+      "layouts": {
+        "allowed": [
+          "trade-lead",
+          "trade-proof",
+          "trade-emergency",
+          "home-quote",
+          "home-visual"
+        ],
+        "forbidden": [
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof",
+          "emergency"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio"
+        ]
+      }
     },
     "pest-control": {
       "label": "pest control",
@@ -1127,7 +2026,6 @@
           "faq",
           "hours",
           "map",
-          "pricing",
           "process",
           "quote-form",
           "reviews",
@@ -1138,7 +2036,8 @@
           "before-after",
           "booking",
           "menu",
-          "pickup-order"
+          "pickup-order",
+          "pricing"
         ]
       },
       "multipage": {
@@ -1169,13 +2068,85 @@
       },
       "note": "schema @type LocalBusiness (PestControl is not a schema.org type)",
       "forbiddenLayouts": [
+        "trade-emergency",
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "trade-lead",
+          "trade-proof"
+        ],
+        "forbidden": [
+          "trade-emergency",
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     },
     "moving": {
       "label": "moving",
@@ -1207,7 +2178,6 @@
           "faq",
           "hours",
           "map",
-          "pricing",
           "process",
           "quote-form",
           "reviews",
@@ -1218,7 +2188,8 @@
           "before-after",
           "booking",
           "menu",
-          "pickup-order"
+          "pickup-order",
+          "pricing"
         ]
       },
       "multipage": {
@@ -1249,13 +2220,85 @@
         ]
       },
       "forbiddenLayouts": [
+        "trade-emergency",
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "trade-lead",
+          "trade-proof"
+        ],
+        "forbidden": [
+          "trade-emergency",
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     },
     "handyman": {
       "label": "handyman",
@@ -1288,7 +2331,6 @@
           "faq",
           "hours",
           "map",
-          "pricing",
           "process",
           "quote-form",
           "reviews",
@@ -1298,7 +2340,8 @@
           "emergency",
           "booking",
           "menu",
-          "pickup-order"
+          "pickup-order",
+          "pricing"
         ]
       },
       "multipage": {
@@ -1328,13 +2371,85 @@
         "forbiddenFeatures": []
       },
       "forbiddenLayouts": [
+        "trade-emergency",
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "trade-lead",
+          "trade-proof"
+        ],
+        "forbidden": [
+          "trade-emergency",
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     },
     "auto-repair": {
       "label": "auto repair",
@@ -1408,13 +2523,86 @@
         ]
       },
       "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "trade-proof",
+        "home-quote",
+        "home-visual",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "auto-service"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "trade-proof",
+          "home-quote",
+          "home-visual",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     },
     "auto-detailing": {
       "label": "auto detailing",
@@ -1448,7 +2636,6 @@
           "faq",
           "hours",
           "map",
-          "pricing",
           "process",
           "quote-form",
           "reviews",
@@ -1457,7 +2644,8 @@
         "forbidden": [
           "emergency",
           "menu",
-          "pickup-order"
+          "pickup-order",
+          "pricing"
         ]
       },
       "multipage": {
@@ -1488,13 +2676,84 @@
         ]
       },
       "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "trade-proof",
+        "home-quote",
+        "home-visual",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "auto-packages",
+          "auto-service"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "trade-proof",
+          "home-quote",
+          "home-visual",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof",
+          "portfolio"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "emergency"
+        ]
+      }
     },
     "salon-barber": {
       "label": "salon & barber",
@@ -1527,7 +2786,6 @@
           "faq",
           "hours",
           "map",
-          "pricing",
           "process",
           "reviews",
           "team"
@@ -1537,7 +2795,8 @@
           "quote-form",
           "before-after",
           "menu",
-          "pickup-order"
+          "pickup-order",
+          "pricing"
         ]
       },
       "multipage": {
@@ -1568,13 +2827,83 @@
         ]
       },
       "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "trade-proof",
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "salon-book",
+          "salon-look",
+          "salon-team"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "trade-proof",
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof",
+          "portfolio"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "emergency"
+        ]
+      }
     },
     "tattoo": {
       "label": "tattoo",
@@ -1648,13 +2977,83 @@
         ]
       },
       "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "trade-proof",
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "salon-book",
+          "salon-look",
+          "salon-team"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "trade-proof",
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof",
+          "portfolio"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "emergency"
+        ]
+      }
     },
     "pet-services": {
       "label": "pet care",
@@ -1687,7 +3086,6 @@
           "faq",
           "hours",
           "map",
-          "pricing",
           "process",
           "reviews",
           "team"
@@ -1697,7 +3095,8 @@
           "quote-form",
           "before-after",
           "menu",
-          "pickup-order"
+          "pickup-order",
+          "pricing"
         ]
       },
       "multipage": {
@@ -1728,13 +3127,85 @@
         ]
       },
       "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "trade-proof",
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "pet-book",
+          "pet-trust"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "trade-proof",
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     },
     "dental-medical": {
       "label": "dental & medical",
@@ -1809,13 +3280,84 @@
       },
       "note": "button label \"Request a Visit\"; portal off; no health details in forms",
       "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "trade-proof",
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "care-visit",
+          "care-proof",
+          "care-calm"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "trade-proof",
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     },
     "daycare": {
       "label": "daycare",
@@ -1848,7 +3390,6 @@
           "faq",
           "hours",
           "map",
-          "pricing",
           "process",
           "reviews",
           "team"
@@ -1858,7 +3399,8 @@
           "quote-form",
           "before-after",
           "menu",
-          "pickup-order"
+          "pickup-order",
+          "pricing"
         ]
       },
       "multipage": {
@@ -1890,13 +3432,84 @@
       },
       "note": "booking = tour/enrollment request",
       "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "trade-proof",
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "care-visit",
+          "care-proof",
+          "pet-trust"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "trade-proof",
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     },
     "law-accounting": {
       "label": "law & accounting",
@@ -1929,7 +3542,6 @@
           "faq",
           "hours",
           "map",
-          "pricing",
           "process",
           "quote-form",
           "reviews",
@@ -1939,7 +3551,8 @@
           "emergency",
           "before-after",
           "menu",
-          "pickup-order"
+          "pickup-order",
+          "pricing"
         ]
       },
       "multipage": {
@@ -1971,13 +3584,85 @@
       },
       "note": "consultation request; multipage uses book, client-site-templates uses quote-form — both allowed",
       "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "trade-proof",
+          "care-proof"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     },
     "fitness": {
       "label": "fitness",
@@ -2010,7 +3695,6 @@
           "faq",
           "hours",
           "map",
-          "pricing",
           "process",
           "reviews",
           "team"
@@ -2020,7 +3704,8 @@
           "quote-form",
           "before-after",
           "menu",
-          "pickup-order"
+          "pickup-order",
+          "pricing"
         ]
       },
       "multipage": {
@@ -2051,13 +3736,83 @@
         ]
       },
       "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "trade-proof",
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "trade-proof",
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof",
+          "schedule"
+        ],
+        "forbidden": [
+          "search",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     },
     "church": {
       "label": "church",
@@ -2131,13 +3886,86 @@
       },
       "note": "no money feature; schedule = service times",
       "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "trade-proof",
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "care-visit"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "trade-proof",
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     },
     "real-estate": {
       "label": "real estate",
@@ -2212,13 +4040,83 @@
       },
       "note": "--listings-file needs --brokerage",
       "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "trade-proof",
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "re-search",
+          "re-seller",
+          "re-agent"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "trade-proof",
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof",
+          "search"
+        ],
+        "forbidden": [
+          "schedule",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     },
     "photography": {
       "label": "photography",
@@ -2251,7 +4149,6 @@
           "faq",
           "hours",
           "map",
-          "pricing",
           "process",
           "reviews",
           "team"
@@ -2261,7 +4158,8 @@
           "quote-form",
           "before-after",
           "menu",
-          "pickup-order"
+          "pickup-order",
+          "pricing"
         ]
       },
       "multipage": {
@@ -2292,13 +4190,84 @@
         ]
       },
       "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "trade-proof",
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "photo-portfolio",
+          "photo-packages"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "trade-proof",
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof",
+          "portfolio"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "emergency"
+        ]
+      }
     },
     "restaurant": {
       "label": "restaurant & food truck",
@@ -2371,7 +4340,85 @@
           "payInvoice"
         ]
       },
-      "note": "pickup-order needs --menu-file; without it build falls back to menu + call (NOT quote-form)"
+      "note": "pickup-order needs --menu-file; without it build falls back to menu + call (NOT quote-form)",
+      "layouts": {
+        "allowed": [
+          "rest-order",
+          "rest-dine",
+          "truck-where"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "trade-proof",
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof",
+          "menu-first"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "portfolio",
+          "emergency"
+        ]
+      },
+      "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "trade-proof",
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
+      ],
+      "forbiddenHeroes": [
+        "search",
+        "schedule",
+        "portfolio",
+        "emergency"
+      ]
     },
     "restaurant-foodtruck": {
       "label": "restaurant & food truck",
@@ -2444,7 +4491,85 @@
           "booking",
           "payInvoice"
         ]
-      }
+      },
+      "layouts": {
+        "allowed": [
+          "rest-order",
+          "rest-dine",
+          "truck-where"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "trade-proof",
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof",
+          "menu-first"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "portfolio",
+          "emergency"
+        ]
+      },
+      "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "trade-proof",
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
+      ],
+      "forbiddenHeroes": [
+        "search",
+        "schedule",
+        "portfolio",
+        "emergency"
+      ]
     },
     "restaurant-ordering": {
       "label": "restaurant & food truck",
@@ -2517,7 +4642,85 @@
           "booking",
           "payInvoice"
         ]
-      }
+      },
+      "layouts": {
+        "allowed": [
+          "rest-order",
+          "rest-dine",
+          "truck-where"
+        ],
+        "forbidden": [
+          "trade-lead",
+          "trade-emergency",
+          "trade-proof",
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof",
+          "menu-first"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "portfolio",
+          "emergency"
+        ]
+      },
+      "forbiddenLayouts": [
+        "trade-lead",
+        "trade-emergency",
+        "trade-proof",
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
+      ],
+      "forbiddenHeroes": [
+        "search",
+        "schedule",
+        "portfolio",
+        "emergency"
+      ]
     },
     "generic-business": {
       "label": "generic business",
@@ -2591,13 +4794,85 @@
         ]
       },
       "forbiddenLayouts": [
+        "trade-emergency",
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
         "rest-order",
         "rest-dine",
-        "truck-where"
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ],
       "forbiddenHeroes": [
-        "menu-first"
-      ]
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
+      ],
+      "layouts": {
+        "allowed": [
+          "trade-lead",
+          "trade-proof"
+        ],
+        "forbidden": [
+          "trade-emergency",
+          "home-quote",
+          "home-visual",
+          "auto-service",
+          "auto-packages",
+          "salon-book",
+          "salon-look",
+          "salon-team",
+          "rest-order",
+          "rest-dine",
+          "truck-where",
+          "fit-schedule",
+          "fit-first-visit",
+          "fit-community",
+          "pet-book",
+          "pet-trust",
+          "care-visit",
+          "care-proof",
+          "care-calm",
+          "re-search",
+          "re-seller",
+          "re-agent",
+          "photo-portfolio",
+          "photo-packages"
+        ]
+      },
+      "heroes": {
+        "allowed": [
+          "split",
+          "centered",
+          "media",
+          "proof"
+        ],
+        "forbidden": [
+          "search",
+          "schedule",
+          "menu-first",
+          "portfolio",
+          "emergency"
+        ]
+      }
     }
   },
   "fallback": {
@@ -2665,83 +4940,873 @@
       ]
     },
     "forbiddenLayouts": [
+      "trade-emergency",
+      "home-quote",
+      "home-visual",
+      "auto-service",
+      "auto-packages",
+      "salon-book",
+      "salon-look",
+      "salon-team",
       "rest-order",
       "rest-dine",
-      "truck-where"
+      "truck-where",
+      "fit-schedule",
+      "fit-first-visit",
+      "fit-community",
+      "pet-book",
+      "pet-trust",
+      "care-visit",
+      "care-proof",
+      "care-calm",
+      "re-search",
+      "re-seller",
+      "re-agent",
+      "photo-portfolio",
+      "photo-packages"
     ],
     "forbiddenHeroes": [
-      "menu-first"
-    ]
-  },
-  "auditMarkers": {
-    "_note": "Not part of the spec v5 matrix: HTML patterns used by npm run audit:industry. A marker is a leak when none of its ids is allowed (money.allowed or features.allowed) for the page trade.",
-    "food ordering / menu": {
-      "ids": [
-        "pickup-order",
-        "menu"
+      "media",
+      "search",
+      "schedule",
+      "menu-first",
+      "portfolio",
+      "emergency"
+    ],
+    "layouts": {
+      "allowed": [
+        "trade-lead",
+        "trade-proof"
       ],
-      "patterns": [
-        "order/order\\.js",
-        "class=\"order-static",
-        "<section[^>]*id=\"(menu|order)\"",
-        "data-kind=\"pickup-order\"",
-        ">\\s*Order [Pp]ickup\\s*<",
-        "add to cart"
+      "forbidden": [
+        "trade-emergency",
+        "home-quote",
+        "home-visual",
+        "auto-service",
+        "auto-packages",
+        "salon-book",
+        "salon-look",
+        "salon-team",
+        "rest-order",
+        "rest-dine",
+        "truck-where",
+        "fit-schedule",
+        "fit-first-visit",
+        "fit-community",
+        "pet-book",
+        "pet-trust",
+        "care-visit",
+        "care-proof",
+        "care-calm",
+        "re-search",
+        "re-seller",
+        "re-agent",
+        "photo-portfolio",
+        "photo-packages"
       ]
     },
-    "booking": {
-      "ids": [
-        "booking",
-        "grooming-booking",
-        "appointment-request"
+    "heroes": {
+      "allowed": [
+        "split",
+        "centered",
+        "proof"
       ],
-      "patterns": [
-        "<section[^>]*id=\"booking\"",
-        "data-kind=\"(booking|grooming-booking|appointment-request)\"",
-        "booking-embed",
-        "href=\"[^\"]*book/\"[^>]*>\\s*Book"
-      ]
-    },
-    "listings": {
-      "ids": [
-        "listing-search"
-      ],
-      "patterns": [
-        "data-kind=\"listing-search\"",
-        "class=\"m-listing",
-        "data-filter=beds",
-        "href=\"[^\"]*listings/\""
-      ]
-    },
-    "class schedule": {
-      "ids": [
-        "class-schedule"
-      ],
-      "patterns": [
-        "data-kind=\"class-schedule\"",
-        "class=\"m-schedule",
-        "class=\"hero-strip"
-      ]
-    },
-    "emergency": {
-      "ids": [
-        "emergency",
-        "emergency-request"
-      ],
-      "patterns": [
-        "data-kind=\"emergency-request\"",
-        "class=\"emergency-banner",
-        "class=\"hero-band",
-        "hero--emergency"
-      ]
-    },
-    "prices": {
-      "ids": [
-        "pricing"
-      ],
-      "patterns": [
-        "<section[^>]*id=\"pricing\""
+      "forbidden": [
+        "media",
+        "search",
+        "schedule",
+        "menu-first",
+        "portfolio",
+        "emergency"
       ]
     }
+  },
+  "auditMarkers": {
+    "_note": "Per id. A page leaks when a marker matches and its id is not allowed for the page trade (money.allowed, features.allowed, layouts.allowed, heroes.allowed, multipage.action/allowedFeatures). Patterns are JS RegExp sources, case-sensitive unless (?i) is noted in flags.",
+    "money": {
+      "quote-form": {
+        "patterns": [
+          "data-kind=\"quote-form\""
+        ]
+      },
+      "emergency-request": {
+        "patterns": [
+          "data-kind=\"emergency-request\""
+        ]
+      },
+      "inspection-request": {
+        "patterns": [
+          "data-kind=\"inspection-request\""
+        ]
+      },
+      "instant-quote": {
+        "patterns": [
+          "data-kind=\"instant-quote\""
+        ]
+      },
+      "job-list": {
+        "patterns": [
+          "data-kind=\"job-list\""
+        ]
+      },
+      "service-request": {
+        "patterns": [
+          "data-kind=\"service-request\""
+        ]
+      },
+      "package-picker": {
+        "patterns": [
+          "data-kind=\"package-picker\""
+        ]
+      },
+      "class-schedule": {
+        "patterns": [
+          "data-kind=\"class-schedule\"",
+          "class=\"m-schedule",
+          "class=\"m-slot"
+        ]
+      },
+      "grooming-booking": {
+        "patterns": [
+          "data-kind=\"grooming-booking\""
+        ]
+      },
+      "appointment-request": {
+        "patterns": [
+          "data-kind=\"appointment-request\""
+        ]
+      },
+      "listing-search": {
+        "patterns": [
+          "data-kind=\"listing-search\"",
+          "class=\"m-listing",
+          "data-filter=beds",
+          "data-beds="
+        ]
+      },
+      "booking": {
+        "patterns": [
+          "data-kind=\"booking\"",
+          "<section[^>]*id=\"booking\"",
+          "booking-embed"
+        ]
+      },
+      "pickup-order": {
+        "patterns": [
+          "data-kind=\"pickup-order\"",
+          "order/order\\.js",
+          "class=\"order-static",
+          "<section[^>]*id=\"order\"",
+          ">\\s*Order [Pp]ickup\\s*<"
+        ]
+      }
+    },
+    "features": {
+      "call-bar": {
+        "patterns": [
+          "class=\"call-bar"
+        ]
+      },
+      "emergency": {
+        "patterns": [
+          "class=\"emergency-banner"
+        ]
+      },
+      "badges": {
+        "patterns": [
+          "class=\"badge-strip"
+        ]
+      },
+      "quote-form": {
+        "patterns": [
+          "<section[^>]*id=\"quote\""
+        ]
+      },
+      "reviews": {
+        "patterns": [
+          "<section[^>]*id=\"reviews\"",
+          "<section[^>]*id=\"testimonials\""
+        ]
+      },
+      "map": {
+        "patterns": [
+          "<section[^>]*id=\"map\"",
+          "class=\"map-frame"
+        ]
+      },
+      "before-after": {
+        "patterns": [
+          "<section[^>]*id=\"before-after\"",
+          "class=\"ba-pair"
+        ]
+      },
+      "hours": {
+        "patterns": [
+          "<section[^>]*id=\"hours\""
+        ]
+      },
+      "booking": {
+        "patterns": [
+          "<section[^>]*id=\"booking\"",
+          "href=\"[^\"]*book/\"[^>]*>\\s*Book"
+        ]
+      },
+      "menu": {
+        "patterns": [
+          "<section[^>]*id=\"menu\"",
+          "class=\"panel menu-section",
+          "class=\"menu-sec"
+        ]
+      },
+      "pickup-order": {
+        "patterns": [
+          "<section[^>]*id=\"order\"",
+          "order/order\\.js",
+          "id=\"order-app\"",
+          "id=\"order-form\""
+        ]
+      },
+      "process": {
+        "patterns": [
+          "<section[^>]*id=\"process\"",
+          "class=\"steps"
+        ]
+      },
+      "checklist": {
+        "patterns": [
+          "<section[^>]*id=\"included\"",
+          "class=\"checklist"
+        ]
+      },
+      "pricing": {
+        "patterns": [
+          "<section[^>]*id=\"pricing\"",
+          "class=\"panel price-card",
+          "class=\"price\""
+        ]
+      },
+      "team": {
+        "patterns": [
+          "<section[^>]*id=\"team\"",
+          "class=\"panel team-card"
+        ]
+      },
+      "faq": {
+        "patterns": [
+          "<section[^>]*id=\"faq\""
+        ]
+      }
+    },
+    "heroes": {
+      "split": {
+        "patterns": [
+          "hero--split"
+        ]
+      },
+      "centered": {
+        "patterns": [
+          "hero--centered"
+        ]
+      },
+      "media": {
+        "patterns": [
+          "hero--media"
+        ]
+      },
+      "search": {
+        "patterns": [
+          "hero--search",
+          "class=\"hero-search",
+          "data-hero-search"
+        ]
+      },
+      "schedule": {
+        "patterns": [
+          "hero--schedule",
+          "class=\"hero-strip"
+        ]
+      },
+      "menu-first": {
+        "patterns": [
+          "hero--menu-first"
+        ]
+      },
+      "portfolio": {
+        "patterns": [
+          "hero--portfolio",
+          "class=\"hero-mosaic"
+        ]
+      },
+      "proof": {
+        "patterns": [
+          "hero--proof"
+        ]
+      },
+      "emergency": {
+        "patterns": [
+          "hero--emergency",
+          "class=\"hero-band"
+        ]
+      }
+    },
+    "layouts": {
+      "_note": "Layouts leave no unique markup; read meta x-layout (pageTradeRecord). Pattern below.",
+      "pattern": "<meta name=\"x-layout\" content=\"([a-z-]+)\">"
+    },
+    "multipageActions": {
+      "book": {
+        "patterns": [
+          "href=\"[^\"]*book/\""
+        ]
+      },
+      "order": {
+        "patterns": [
+          "href=\"[^\"]*order/\"",
+          "href=\"[^\"]*menu/\""
+        ]
+      },
+      "schedule": {
+        "patterns": [
+          "href=\"[^\"]*schedule/\""
+        ]
+      },
+      "listings": {
+        "patterns": [
+          "href=\"[^\"]*listings/\""
+        ]
+      },
+      "packages": {
+        "patterns": [
+          "href=\"[^\"]*packages/\""
+        ]
+      },
+      "quote": {
+        "patterns": [
+          "href=\"[^\"]*quote/\""
+        ]
+      }
+    },
+    "legacyGroups": {
+      "_note": "Not part of the spec v5 matrix: HTML patterns used by npm run audit:industry. A marker is a leak when none of its ids is allowed (money.allowed or features.allowed) for the page trade.",
+      "food ordering / menu": {
+        "ids": [
+          "pickup-order",
+          "menu"
+        ],
+        "patterns": [
+          "order/order\\.js",
+          "class=\"order-static",
+          "<section[^>]*id=\"(menu|order)\"",
+          "data-kind=\"pickup-order\"",
+          ">\\s*Order [Pp]ickup\\s*<",
+          "add to cart"
+        ]
+      },
+      "booking": {
+        "ids": [
+          "booking",
+          "grooming-booking",
+          "appointment-request"
+        ],
+        "patterns": [
+          "<section[^>]*id=\"booking\"",
+          "data-kind=\"(booking|grooming-booking|appointment-request)\"",
+          "booking-embed",
+          "href=\"[^\"]*book/\"[^>]*>\\s*Book"
+        ]
+      },
+      "listings": {
+        "ids": [
+          "listing-search"
+        ],
+        "patterns": [
+          "data-kind=\"listing-search\"",
+          "class=\"m-listing",
+          "data-filter=beds",
+          "href=\"[^\"]*listings/\""
+        ]
+      },
+      "class schedule": {
+        "ids": [
+          "class-schedule"
+        ],
+        "patterns": [
+          "data-kind=\"class-schedule\"",
+          "class=\"m-schedule",
+          "class=\"hero-strip"
+        ]
+      },
+      "emergency": {
+        "ids": [
+          "emergency",
+          "emergency-request"
+        ],
+        "patterns": [
+          "data-kind=\"emergency-request\"",
+          "class=\"emergency-banner",
+          "class=\"hero-band",
+          "hero--emergency"
+        ]
+      },
+      "prices": {
+        "ids": [
+          "pricing"
+        ],
+        "patterns": [
+          "<section[^>]*id=\"pricing\""
+        ]
+      }
+    }
+  },
+  "pageTradeRecord": {
+    "_note": "Every built page records its trade so audits never infer it. Readers use this precedence; the first hit wins, and a conflict between two present sources is a FAIL.",
+    "meta": {
+      "tag": "<meta name=\"x-trade\" content=\"{tradeId}\">",
+      "required": true,
+      "alsoEmit": [
+        "<meta name=\"x-layout\" content=\"{layoutId}\">",
+        "<meta name=\"x-hero\" content=\"{heroId}\">",
+        "<meta name=\"x-money\" content=\"{moneyId|none}\">"
+      ],
+      "pattern": "<meta name=\"x-trade\" content=\"([a-z-]+)\">"
+    },
+    "buildJson": {
+      "file": "build.json (next to index.html, or in a parent up to 4 levels)",
+      "schema": {
+        "trade": "string (matrix trade id, required)",
+        "resolvedFrom": "string (the raw --trade value)",
+        "money": "string|null",
+        "features": "string[]",
+        "layout": "string|null",
+        "hero": "string|null",
+        "allowFeature": "string|null",
+        "allowReason": "string|null",
+        "matrixVersion": "string",
+        "commit": "string",
+        "builtAt": "ISO 8601"
+      }
+    },
+    "manifest": {
+      "file": "prospects/manifest.json",
+      "schema": {
+        "<slug>": {
+          "trade": "string",
+          "resolvedFrom": "string",
+          "matrixVersion": "string"
+        }
+      },
+      "note": "Backfill for the 358 existing prospects; entries for the 20 flagged wrong-trade prospects record the trade they were BUILT with plus suggestedTrade, until William approves rebuilds."
+    },
+    "precedence": [
+      "--trade (build time)",
+      "meta x-trade",
+      "build.json",
+      "manifest",
+      "folder name (legacy, warn)",
+      "JSON-LD @type via TYPE_TRADE (legacy, warn)"
+    ],
+    "missing": "warn in local builds; FAIL in export-client and CI"
+  },
+  "aliases": {
+    "_note": "Replaces TRADE_ALIASES (mockup.mjs) + LOOSE_SKIP. Keys are resolved trade ids (folder ids). resolveTrade(raw): slugify, then rules in order.",
+    "exact": {
+      "pressure-washing": [
+        "pressure-washing",
+        "pressure-wash",
+        "pressure",
+        "power-washing",
+        "power-wash",
+        "powerwashing",
+        "pressurewashing",
+        "soft-wash",
+        "softwash",
+        "exterior-cleaning",
+        "window-washing"
+      ],
+      "landscaping": [
+        "landscaping",
+        "landscape",
+        "landscaper",
+        "lawn",
+        "lawn-care",
+        "lawncare",
+        "lawn-service",
+        "mowing",
+        "yard",
+        "yard-care",
+        "snow-removal"
+      ],
+      "plumbing": [
+        "plumbing",
+        "plumber",
+        "plumbers",
+        "drain",
+        "water-heater"
+      ],
+      "cleaning-service": [
+        "cleaning-service",
+        "cleaning",
+        "cleaner",
+        "cleaners",
+        "house-cleaning",
+        "maid",
+        "maids",
+        "janitorial",
+        "commercial-cleaning",
+        "carpet-cleaning"
+      ],
+      "restaurant": [
+        "restaurant",
+        "pizza",
+        "pizzeria",
+        "cafe",
+        "coffee",
+        "bakery",
+        "food",
+        "food-truck",
+        "diner",
+        "bar",
+        "catering",
+        "restaurant-foodtruck",
+        "foodtruck",
+        "food-trucks",
+        "restaurant-ordering"
+      ],
+      "auto-detailing": [
+        "auto-detailing",
+        "detailing",
+        "detail",
+        "detailer",
+        "car-detailing",
+        "mobile-detailing",
+        "auto-detail",
+        "car-wash",
+        "ceramic-coating"
+      ],
+      "handyman": [
+        "handyman",
+        "handy-man",
+        "home-repair",
+        "home-repairs",
+        "repair",
+        "repairs",
+        "home-improvement",
+        "remodeling",
+        "carpentry",
+        "drywall"
+      ],
+      "roofing": [
+        "roofing",
+        "roofer",
+        "roofers",
+        "roof",
+        "roof-repair",
+        "gutters",
+        "metal-roofing"
+      ],
+      "hvac": [
+        "hvac",
+        "heating",
+        "cooling",
+        "air-conditioning",
+        "ac-repair",
+        "furnace",
+        "heating-and-cooling"
+      ],
+      "electrician": [
+        "electrician",
+        "electricians",
+        "electrical",
+        "electric",
+        "electrical-contractor"
+      ],
+      "painting": [
+        "painting",
+        "painter",
+        "painters",
+        "house-painting",
+        "interior-painting",
+        "exterior-painting"
+      ],
+      "auto-repair": [
+        "auto-repair",
+        "mechanic",
+        "auto-mechanic",
+        "car-repair",
+        "auto-shop",
+        "garage",
+        "auto-service"
+      ],
+      "salon-barber": [
+        "salon-barber",
+        "salon",
+        "barber",
+        "barbershop",
+        "barber-shop",
+        "hair-salon",
+        "beauty-salon",
+        "nail-salon",
+        "spa"
+      ],
+      "fitness": [
+        "fitness",
+        "gym",
+        "personal-trainer",
+        "personal-training",
+        "crossfit",
+        "yoga",
+        "pilates",
+        "studio"
+      ],
+      "pet-services": [
+        "pet-services",
+        "pet",
+        "pets",
+        "pet-grooming",
+        "grooming",
+        "groomer",
+        "dog-walking",
+        "pet-sitting",
+        "dog-training",
+        "boarding"
+      ],
+      "dental-medical": [
+        "dental-medical",
+        "dental",
+        "dentist",
+        "dental-office",
+        "medical",
+        "clinic",
+        "doctor",
+        "chiropractor",
+        "physical-therapy",
+        "orthodontist"
+      ],
+      "real-estate": [
+        "real-estate",
+        "realtor",
+        "realty",
+        "real-estate-agent",
+        "realestate",
+        "broker",
+        "property-management"
+      ],
+      "concrete": [
+        "concrete",
+        "concrete-contractor",
+        "concrete-work",
+        "flatwork",
+        "masonry",
+        "mason",
+        "stamped-concrete"
+      ],
+      "fencing": [
+        "fencing",
+        "fence",
+        "fences",
+        "fence-company",
+        "fence-contractor",
+        "fence-installation"
+      ],
+      "pest-control": [
+        "pest-control",
+        "pest",
+        "pests",
+        "exterminator",
+        "exterminating",
+        "termite",
+        "bed-bugs",
+        "wildlife-removal"
+      ],
+      "moving": [
+        "moving",
+        "movers",
+        "mover",
+        "moving-company",
+        "moving-services",
+        "relocation-services"
+      ],
+      "tree-service": [
+        "tree-service",
+        "tree-services",
+        "tree-care",
+        "arborist",
+        "tree-removal",
+        "tree-trimming",
+        "stump-grinding"
+      ],
+      "tattoo": [
+        "tattoo",
+        "tattoos",
+        "tattoo-studio",
+        "tattoo-shop",
+        "tattoo-parlor",
+        "piercing"
+      ],
+      "daycare": [
+        "daycare",
+        "day-care",
+        "childcare",
+        "child-care",
+        "preschool",
+        "nanny",
+        "babysitting"
+      ],
+      "law-accounting": [
+        "law-accounting",
+        "law",
+        "lawyer",
+        "attorney",
+        "law-firm",
+        "legal",
+        "accounting",
+        "accountant",
+        "cpa",
+        "bookkeeping",
+        "tax-preparation",
+        "financial-advisor"
+      ],
+      "church": [
+        "church",
+        "churches",
+        "ministry",
+        "parish",
+        "congregation",
+        "worship",
+        "chapel"
+      ],
+      "photography": [
+        "photography",
+        "photographer",
+        "photo",
+        "photos",
+        "wedding-photography",
+        "portrait-photography",
+        "videography"
+      ],
+      "generic-business": [
+        "generic",
+        "generic-business",
+        "business",
+        "other",
+        "default"
+      ]
+    },
+    "reusedNames": {
+      "landscaping": "landscaping",
+      "cleaning": "cleaning-service",
+      "restaurant-foodtruck": "restaurant",
+      "restaurant-ordering": "restaurant"
+    },
+    "looseSkip": [
+      "bar",
+      "food",
+      "repair",
+      "repairs",
+      "detail",
+      "pressure",
+      "yard",
+      "cafe",
+      "coffee",
+      "drain",
+      "maid",
+      "lawn",
+      "business",
+      "other",
+      "default",
+      "generic",
+      "photo",
+      "photos",
+      "studio",
+      "pet",
+      "pets",
+      "legal",
+      "law",
+      "spa",
+      "fence",
+      "roof",
+      "paint"
+    ],
+    "_looseSkipNote": "Words never used for loose (token) matching. First 12 = LOOSE_SKIP at 7158230; the rest are added in v5.1 because they are too short/generic to pick a trade from a business NAME (still fine as an exact --trade value). roof/paint/fence remain matchable via their longer aliases (roofing, painting, fencing) and keywords below.",
+    "keywords": {
+      "roofing": [
+        "roof",
+        "roofer",
+        "roofing",
+        "gutter",
+        "gutters"
+      ],
+      "painting": [
+        "paint",
+        "painter",
+        "painting",
+        "painters"
+      ],
+      "concrete": [
+        "concrete",
+        "masonry",
+        "mason",
+        "flatwork"
+      ],
+      "tree-service": [
+        "tree",
+        "trees",
+        "arborist",
+        "stump"
+      ],
+      "plumbing": [
+        "plumb",
+        "plumber",
+        "plumbing",
+        "rooter"
+      ],
+      "electrician": [
+        "electric",
+        "electrical",
+        "electrician"
+      ],
+      "hvac": [
+        "hvac",
+        "heating",
+        "cooling",
+        "furnace"
+      ],
+      "fencing": [
+        "fence",
+        "fencing"
+      ],
+      "pressure-washing": [
+        "pressure-washing",
+        "power-washing",
+        "softwash"
+      ]
+    },
+    "_keywordsNote": "Strong trade words. If a business name (not --trade) contains a keyword of a different trade than the one resolved, WARN \"name suggests <trade>\". Example: \"Fresh Coat Painting\" resolved to handyman.",
+    "priority": {
+      "_note": "Tie-break when several trades match loosely: higher wins. Specific trades 100; umbrella trades lower so they never beat a specific match.",
+      "default": 100,
+      "handyman": 10,
+      "landscaping": 20,
+      "cleaning-service": 30,
+      "generic-business": 0
+    },
+    "tieBreak": [
+      "1. exact alias match on the whole slug wins (aliases.exact).",
+      "2. reusedNames map to their folder (cleaning -> cleaning-service, restaurant-foodtruck -> restaurant).",
+      "3. multi-word aliases (containing \"-\") found as a substring: longest alias wins.",
+      "4. single-token aliases not in looseSkip: candidate trades scored by priority, then by alias length, then by earliest token position in the slug.",
+      "5. still tied: WARN and use the first by priority order; never silently prefer insertion order (today's behaviour: handyman beats painting for \"painting-and-remodeling\" because handyman is listed first).",
+      "6. no match: fallback (deny by default) and WARN; never resolve to restaurant via loose match (restaurant needs an exact alias)."
+    ],
+    "exactOnly": [
+      "restaurant",
+      "salon-barber",
+      "dental-medical",
+      "daycare",
+      "church",
+      "law-accounting"
+    ],
+    "_exactOnlyNote": "These trades are never chosen by loose token match (avoids \"bar\", \"spa\", \"studio\", \"law\" in unrelated names).",
+    "duplicatesAtCommit": {}
   }
 }

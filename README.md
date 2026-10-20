@@ -41,6 +41,13 @@ Demo logins (static demo, and `npm run dev`): owner `owner@demo.test` / `demo-ow
 npm ci && npx playwright install chromium && npm run build && npm test && npm run test:e2e
 ```
 
+### Spec v5.1 (matrix 5.1.0)
+- `tools/industry-features.json` is now the v5.1 matrix (`specs/spec-v5.1-feature-matrix.json`) in both repos.
+- **Trade resolution** comes from the data. `MATRIX.aliases` (exact, reused names, longest hyphenated alias, then a priority-scored token match; `looseSkip` and `exactOnly` included) replaces `LOOSE_SKIP` and the first-match-in-insertion-order loop. If a business name suggests a different trade, the build warns. For example, painting-and-remodeling now resolves to painting.
+- **Prices:** `pricing` is forbidden on every trade. The only way to show it is `--allow-feature pricing --allow-reason "..." --pricing-file F.json`.
+- **Page trade record:** every build writes `<meta name="x-trade|x-layout|x-hero|x-money">` and a `build.json` (trade, resolvedFrom, money, features, layout, hero, allowFeature/Reason, matrixVersion). The audit reads sources in this order: `--trade`, meta, build.json, manifest, folder (legacy), JSON-LD (legacy). Two sources that disagree fail the audit. A missing record warns locally and fails with `--strict` or in CI.
+- `scanHtml` uses the per-id `auditMarkers` (money, features, heroes, multipageActions) plus `meta x-layout`.
+
 ## Compliance (audit 2026-10-19)
 - `/privacy/` page (a template the business reviews before launch), linked in the footer. A consent line follows every public form (contact, quote, book, order); the login form doesn't get one.
 - `npm run test:a11y` (part of `test:e2e`) runs axe-core over every public demo page at 390 and 1440. It fails on serious or critical violations.

@@ -135,6 +135,7 @@ function page(rel, { title, description, page: pageId = '', body, noindex = fals
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="x-trade" content="${RULES.id}"><meta name="x-layout" content="${HOME?.layout || 'none'}"><meta name="x-hero" content="${HOME?.hero || 'none'}"><meta name="x-money" content="${ACTION}">
 <title>${esc(fullTitle)}</title>
 <meta name="description" content="${esc(description)}">
 ${canon ? `<link rel="canonical" href="${esc(canon)}">` : ''}${noindex || DEMO ? '<meta name="robots" content="noindex">' : ''}
@@ -299,5 +300,5 @@ page('admin/', { title: 'Owner dashboard', page: 'admin', noindex: true, descrip
 
 fs.writeFileSync(path.join(OUT, 'robots.txt'), DEMO ? 'User-agent: *\nDisallow: /\n' : `User-agent: *\nDisallow: /login/\nDisallow: /portal/\nDisallow: /admin/\nDisallow: /api/\n${siteUrl ? `Sitemap: ${siteUrl}/sitemap.xml\n` : ''}`);
 fs.writeFileSync(path.join(OUT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemap.map((r) => `  <url><loc>${esc(`${siteUrl}/${r}`)}</loc></url>`).join('\n')}\n</urlset>\n`);
-fs.writeFileSync(path.join(OUT, 'build.json'), JSON.stringify({ mode: DEMO ? 'demo' : 'api', trade: tradeKey, theme: themeKey, layout: HOME?.layout || null, hero: HOME?.hero || null, heroImage: HOME?.heroImage || null, allowFeature: OVERRIDE?.id || null, pages: sitemap.length }, null, 2));
+fs.writeFileSync(path.join(OUT, 'build.json'), JSON.stringify({ mode: DEMO ? 'demo' : 'api', trade: RULES.id, resolvedFrom: tradeKey, money: ACTION, matrixVersion: MATRIX.version || null, allowReason: OVERRIDE?.reason || null, theme: themeKey, layout: HOME?.layout || null, hero: HOME?.hero || null, heroImage: HOME?.heroImage || null, allowFeature: OVERRIDE?.id || null, pages: sitemap.length }, null, 2));
 console.log(`Built ${DEMO ? 'demo' : 'server'} site → ${path.relative(ROOT, OUT)} (trade ${tradeKey}, theme ${themeKey}, ${sitemap.length} indexed pages)`);

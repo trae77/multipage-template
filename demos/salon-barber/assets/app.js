@@ -220,7 +220,7 @@ async function dashboard(role) {
   $('nav', app).addEventListener('keydown', (e) => { if (!['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return; const bs = $$('[role=tab]', app); const i = bs.indexOf(document.activeElement); const n = bs[(i + (/Down|Right/.test(e.key) ? 1 : bs.length - 1)) % bs.length]; n.focus(); n.click(); e.preventDefault(); });
   show('overview');
 }
-const table = (cols, rows) => `<div class="tbl-wrap"><table class="tbl"><thead><tr>${cols.map((c) => `<th scope="col">${c}</th>`).join('')}</tr></thead><tbody>${rows.length ? rows.join('') : `<tr><td colspan="${cols.length}">Nothing yet.</td></tr>`}</tbody></table></div>`;
+const table = (cols, rows) => `<div class="tbl-wrap" tabindex="0" role="region" aria-label="Table"><table class="tbl"><thead><tr>${cols.map((c) => `<th scope="col">${c}</th>`).join('')}</tr></thead><tbody>${rows.length ? rows.join('') : `<tr><td colspan="${cols.length}">Nothing yet.</td></tr>`}</tbody></table></div>`;
 const payBtn = (inv) => inv.status === 'paid' ? pill('paid') : SITE.payLink
   ? `<a class="btn" href="${esc(SITE.payLink)}" target="_blank" rel="noopener">Pay invoice</a>`
   : `<button class="btn" type="button" disabled aria-disabled="true" title="Online payment is not set up yet">Pay invoice (not set up)</button>`;

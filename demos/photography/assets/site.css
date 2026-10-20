@@ -157,6 +157,7 @@ label.opt input { width: 1.2rem; height: 1.2rem; min-height: 0; }
 .cart button { min-height: 44px; min-width: 44px; border: 1px solid var(--border-strong); border-radius: 8px; background: transparent; color: inherit; cursor: pointer; font: inherit; }
 dl#quote-summary dt { font-weight: 700; } dl#quote-summary dd { margin: 0 0 .5rem; color: var(--muted); }
 .cta-box { margin: 2rem 0; padding: 1.25rem; border-radius: var(--radius); background: var(--hero-tint); color: #0f172a; border: 1px solid var(--border); }
+.cta-box p, .cta-box h2 { color: #0f172a; }
 .cta-box h2 { margin-top: 0; font-size: 1.25rem; } .cta-box a:not(.btn) { color: #0f172a; }
 .featured { margin-bottom: 1.25rem; } .featured h2 { margin: .2rem 0; }
 .prose { max-width: 70ch; }
@@ -172,6 +173,8 @@ dl#quote-summary dt { font-weight: 700; } dl#quote-summary dd { margin: 0 0 .5re
   .nav-priority a { color: inherit; font-weight: 600; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; padding: 0 .35rem; }
   .nav-priority a[aria-current="page"] { text-decoration: underline; text-underline-offset: 6px; }
 }
+.form-consent { font-size: .9rem; margin: .5rem 0 0; }
+.form-consent a, .prose a { text-decoration: underline; }
 
 :root{--brand-primary:#18181B;--brand-accent:#E11D48;--accent:#E11D48;--on-accent:#ffffff;--on-primary:#ffffff;--link:#18181B;--hero-tint:#e8e8e8;--hero-deep:#0d0d0f;--border-strong:rgba(15,23,42,.3);--focus:#1d4ed8}
 /* Theme: clean-minimal (from client-site-templates tools/library.mjs) */

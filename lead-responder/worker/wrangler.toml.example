@@ -1,0 +1,16 @@
+# Copy to wrangler.toml after William creates the Cloudflare account. Free plan is enough to start.
+name = "tta-lead-responder"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+DRY_RUN = "true"          # set to "false" only after a client is fully onboarded
+ALLOW_ORIGIN = "*"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "lead-responder"
+database_id = "REPLACE_WITH_ID"   # from: wrangler d1 create lead-responder
+
+# Secrets (wrangler secret put NAME): CLIENTS, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN,
+# RESEND_API_KEY, LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, ADMIN_TOKEN

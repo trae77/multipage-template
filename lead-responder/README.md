@@ -118,3 +118,7 @@ n8n 2.43.8 ran on Node 24 from npm, because Docker isn't available on the box. T
   - Respect quiet hours (8 AM to 9 PM at the recipient's location) and any stricter state rules.
   - Missed-call text-back stays off until the client has reviewed it.
 - **Privacy page.** Update the site's privacy page to name the SMS and email providers and say that an AI tool drafts the first reply.
+
+## Production version
+
+The client-ready Cloudflare Worker (Twilio/Resend adapters, DRY_RUN default, consent, STOP/HELP, A2P gate, review requests, tests) is in [`worker/`](worker/). The onboarding checklist and costs are in [`docs/ONBOARDING.md`](docs/ONBOARDING.md).

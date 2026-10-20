@@ -1,0 +1,20 @@
+{
+  "example-plumbing": {
+    "business_name": "Example Plumbing Co",
+    "hours": "Mon-Fri 7am-6pm",
+    "services": ["drain cleaning", "water heaters", "leak repair"],
+    "owner_phone": "+15555550100",
+    "owner_email": "owner@example.com",
+    "from_phone": "+15555550199",
+    "from_email": "Example Plumbing <hello@example.com>",
+    "review_url": "https://g.page/r/EXAMPLE/review",
+    "booking_slots": ["tomorrow 9-11am"],
+    "channels": {
+      "sms_reply": false, "email_reply": true,
+      "owner_alert_sms": false, "owner_alert_email": true,
+      "missed_call_sms": false,
+      "review_email": true, "review_sms": false
+    },
+    "compliance": { "a10dlc_approved": false, "owner_approved": false }
+  }
+}

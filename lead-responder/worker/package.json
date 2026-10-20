@@ -1,0 +1,7 @@
+{
+  "name": "tta-lead-responder-worker",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/" },
+  "engines": { "node": ">=20" }
+}

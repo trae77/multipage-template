@@ -23,6 +23,12 @@ for (const t of targets) for (const f of htmlFiles(path.resolve(t))) {
   if (/\/(admin|portal|login|widgets|upgrade)\//.test(f)) continue;
   const [t, why, allow] = tradeOfFile(f); n++;
   const hits = scanHtml(fs.readFileSync(f, 'utf8'), t, allow);
+  { // compliance audit 2026-10-19 #7: no sample ratings in schema or demo data; SMS consent never pre-checked
+    const h = fs.readFileSync(f, 'utf8');
+    for (const m of h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) if (/"(aggregateRating|review|reviewRating)"/.test(m[1])) hits.push('rating/review in JSON-LD (never ship schema ratings)');
+    if (/"rating"\s*:\s*\d[^}]*"sample"\s*:\s*true|"sample"\s*:\s*true[^}]*"rating"\s*:\s*\d/.test(h)) hits.push('sample review carries a star rating');
+    if (/name="sms_consent"[^>]*\bchecked/.test(h)) hits.push('SMS consent box pre-checked');
+  }
   if (hits.length) bad.push(`${path.relative(process.cwd(), f)} [${t.id} via ${why}]\n      ${hits.join('\n      ')}`);
 }
 console.log(`audit:industry scanned ${n} page(s)`);

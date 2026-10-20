@@ -13,5 +13,5 @@ jobs:
       - name: Build (matrix check runs inside tools/build.mjs)
         run: npm run build
       - run: npm test
-      - name: Demos + industry audit + smoke
+      - name: Demos + industry audit + smoke + axe-core (serious/critical fail)
         run: npm run test:e2e

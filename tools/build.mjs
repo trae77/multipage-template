@@ -41,6 +41,10 @@ let OVERRIDE; try { OVERRIDE = parseOverride(opt('allow-feature', SAME_TRADE ? c
 const ACTION = opt('action', SAME_TRADE ? cfg.actionPage : undefined) || RULES.rules.multipage?.action || 'quote';
 const MP_FORBIDDEN = RULES.rules.multipage?.forbiddenFeatures || []; const MP_ALLOWED = RULES.rules.multipage?.allowedFeatures || [];
 const BUILD_WARNS = [];
+if (!SAME_TRADE && /^Sample\b/.test(B.name || '')) { // compliance audit #7: demo name follows the trade, not the root config
+  const lbl = String(RULES.rules.label || tradeKey).split(/\s*(?:&|\band\b|,|\/)\s*/)[0].replace(/\b\w/g, (c) => c.toUpperCase());
+  B.name = `Sample ${lbl} Co.`;
+}
 if (!SAME_TRADE) delete F.booking; // booking follows the matrix on --trade demos, not the main config
 for (const id of MATRIX.ids.multipageTemplate.features) {
   const explicit = SAME_TRADE && cfg.features?.[id] === true;
@@ -127,7 +131,7 @@ function page(rel, { title, description, page: pageId = '', body, noindex = fals
   if (!noindex) sitemap.push(rel);
   const link = ([href, label]) => `<a href="${hrefOf(pre, href)}"${href === rel ? ' aria-current="page"' : ''}>${label}</a>`;
   const cta = `${pre}${ACTION}/`; const login = F.portal !== false || F.admin !== false;
-  const html = `<!doctype html>
+  let html = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -159,7 +163,7 @@ ${body(pre)}
 <footer class="site-footer"><div class="wrap grid">
 <div><strong>${esc(B.name)}</strong><br>${esc(B.address || '')}<br><a href="${tel}">${esc(B.phone)}</a><br><a href="mailto:${esc(B.email)}">${esc(B.email)}</a></div>
 <div><strong>Services</strong><br>${services.map((s) => `<a href="${pre}services/${s.slug}/">${esc(s.name)}</a>`).join('<br>')}</div>
-<div><strong>Links</strong><br>${NAV.map(([h, l]) => `<a href="${hrefOf(pre, h)}">${l}</a>`).join('<br>')}</div>
+<div><strong>Links</strong><br>${NAV.map(([h, l]) => `<a href="${hrefOf(pre, h)}">${l}</a>`).join('<br>')}<br><a href="${pre}privacy/">Privacy Policy</a></div>
 <div><strong>Service areas</strong><br>${(B.serviceAreas || []).map(esc).join('<br>')}${B.hours ? `<br><br><strong>Hours</strong><br>${esc(B.hours)}` : ''}${B.license ? `<br><br>${esc(B.license)}` : ''}</div>
 </div></footer>
 ${F.callBar !== false ? `<nav class="call-bar" aria-label="Quick actions"><a class="cb-alt" href="${tel}">Call</a><a class="cb-alt" href="${sms}">Text</a><a class="cb-call" href="${cta}">${esc(ACTION_LABEL)}</a></nav>` : ''}
@@ -167,6 +171,8 @@ ${F.callBar !== false ? `<nav class="call-bar" aria-label="Quick actions"><a cla
 ${DEMO ? `<script>window.SEED=${JSON.stringify(content).replace(/</g, '\\u003c')};</script>` : ''}
 <script type="module" src="${pre}assets/app.js"></script>
 </body></html>`;
+  // Compliance audit 2026-10-19 #2: consent line under every form that collects details (not the login form).
+  html = html.replace(/(<form\b(?![^>]*id="login-form")[^>]*>[\s\S]*?<\/form>)(?!<p class="form-consent")/g, `$1<p class="form-consent">We'll only use this to reply to your request. See our <a href="${pre}privacy/">Privacy Policy</a>.</p>`);
   const file = path.join(OUT, rel, 'index.html'); fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, html);
 }
 
@@ -226,6 +232,17 @@ ${pages > 1 ? `<nav class="pager" aria-label="Blog pages">${Array.from({ length:
   page('blog/post/', { title: 'Post', page: 'post-dynamic', noindex: true, description: 'Blog post', body: () => `<section class="page-hero"><div class="wrap"><h1 id="post-title">Loading…</h1><p id="post-date"></p></div></section><section><article class="wrap prose" id="post-body"></article></section>` });
 }
 const formStatus = '<p class="status" role="status" aria-live="polite"></p>';
+page('privacy/', { title: 'Privacy Policy', page: 'privacy', description: `How ${B.name} uses the details you send through this website.`, body: () => `<section class="page-hero"><div class="wrap"><h1>Privacy Policy</h1>${DEMO ? '<p class="hint">Template. The business must review and edit this page before the site goes live.</p>' : ''}</div></section>
+<section><div class="wrap prose">
+<p>This page explains what ${esc(B.name)} collects through this website and how it is used.</p>
+<h2>What we collect</h2><p>Only what you type into a form here: your name, phone, email, address and the details of your request or order. If you create an account we keep your email and a hashed password. We don't use analytics or advertising trackers.</p>
+<h2>Why we collect it</h2><p>To reply to you, give an estimate, schedule or complete the work or order you asked for, and keep normal business records. Nothing else.</p>
+<h2>Who we share it with</h2><p>Our website host and the email service that delivers form messages to us. Payment details, if any, go straight to the payment provider and never touch this site. We don't sell or rent your information or share it for marketing.</p>
+<h2>Text messages</h2><p>We only text you if you ask us to or check a box agreeing to it. Reply STOP to opt out or HELP for help. Message and data rates may apply.</p>
+<h2>How long we keep it</h2><p>As long as needed for your request and our records, then we delete it.</p>
+<h2>Your choices</h2><p>To see, correct or delete what you sent us, contact <a href="mailto:${esc(B.email)}">${esc(B.email)}</a> or <a href="${tel}">${esc(B.phone)}</a>.</p>
+<h2>Outside content</h2><p>Some pages load fonts or a map from outside providers, who may see your IP address as with any website.</p>
+</div></section>` });
 page('contact/', { title: 'Contact & Quote', page: 'contact', description: `Request a quote from ${B.name}.`, body: () => `<section class="page-hero"><div class="wrap"><h1>Request a quote</h1><p>Call <a href="${tel}">${esc(B.phone)}</a> or send the form. Fields marked * are required.</p></div></section>
 <section><div class="wrap grid"><form class="form card" id="lead-form" novalidate>
 <label for="lf-name">Name *</label><input id="lf-name" name="name" autocomplete="name" required>
@@ -266,7 +283,7 @@ if (ACTION === 'order') {
 <aside class="card summary" aria-labelledby="cart-h"><h2 id="cart-h" style="margin-top:0;font-size:1.2rem">Your order</h2><ul id="cart" class="cart" aria-live="polite"><li class="hint">Nothing added yet.</li></ul>
 <form class="form" id="order-form" novalidate><label for="of-time">Pickup time *</label><select id="of-time" name="pickup" required></select><label for="of-name">Name *</label><input id="of-name" name="name" autocomplete="name" required><label for="of-phone">Phone *</label><input id="of-phone" name="phone" type="tel" autocomplete="tel" required><label for="of-notes">Notes (allergies, requests)</label><textarea id="of-notes" name="notes"></textarea><button class="btn" type="submit">Send order request</button>${formStatus}</form></aside></div></section>` });
 }
-if (ACTION === 'schedule') page('schedule/', { title: 'Schedule', page: 'schedule', description: `Schedule for ${B.name}.`, body: (pre) => `<section class="page-hero"><div class="wrap"><h1>Schedule</h1><p>Times are set by the owner and can change. Call to confirm.</p></div></section><section><div class="wrap"><div class="tbl-wrap"><table class="tbl"><caption class="sr-only">Weekly schedule</caption><thead><tr><th scope="col">Day</th><th scope="col">Time</th><th scope="col">What</th><th scope="col">Where</th></tr></thead><tbody>${(content.schedule || []).map((r) => `<tr><td>${esc(r.day)}</td><td>${esc(r.time)}</td><td>${sampleTag(r)}${esc(r.title)}</td><td>${esc(r.where || '')}</td></tr>`).join('')}</tbody></table></div>${F.booking !== false ? `<p style="margin-top:1rem"><a class="btn" href="${pre}book/">Book a first visit</a></p>` : ''}</div></section>` });
+if (ACTION === 'schedule') page('schedule/', { title: 'Schedule', page: 'schedule', description: `Schedule for ${B.name}.`, body: (pre) => `<section class="page-hero"><div class="wrap"><h1>Schedule</h1><p>Times are set by the owner and can change. Call to confirm.</p></div></section><section><div class="wrap"><div class="tbl-wrap" tabindex="0" role="region" aria-label="Schedule table"><table class="tbl"><caption class="sr-only">Weekly schedule</caption><thead><tr><th scope="col">Day</th><th scope="col">Time</th><th scope="col">What</th><th scope="col">Where</th></tr></thead><tbody>${(content.schedule || []).map((r) => `<tr><td>${esc(r.day)}</td><td>${esc(r.time)}</td><td>${sampleTag(r)}${esc(r.title)}</td><td>${esc(r.where || '')}</td></tr>`).join('')}</tbody></table></div>${F.booking !== false ? `<p style="margin-top:1rem"><a class="btn" href="${pre}book/">Book a first visit</a></p>` : ''}</div></section>` });
 if (ACTION === 'listings') {
   const L = content.listings || [];
   page('listings/', { title: 'Listings', page: 'listings', description: `Listings from ${B.name}.`, body: (pre) => `<section class="page-hero"><div class="wrap"><h1>Listings</h1><p>Listings entered by the agent. Ask for price and availability.</p></div></section><section><div class="wrap grid">${L.map((x) => `<article class="card">${tile('Sample listing photo')}<h2 style="font-size:1.2rem">${sampleTag(x)}<a href="${pre}listings/${esc(x.id)}/">${esc(x.title)}</a></h2><p>${esc(x.area)} · ${esc(x.beds)} bed · ${esc(x.baths)} bath</p></article>`).join('')}</div>${B.brokerage ? `<p class="wrap hint">${esc(B.brokerage)}</p>` : ''}</section>` });

@@ -37,14 +37,12 @@
       "id": "r1",
       "author": "Sample Customer A",
       "text": "Sample review text. Real reviews are added by the owner from actual customers.",
-      "rating": 5,
       "sample": true
     },
     {
       "id": "r2",
       "author": "Sample Customer B",
       "text": "Sample review text. Do not publish invented reviews.",
-      "rating": 5,
       "sample": true
     }
   ],

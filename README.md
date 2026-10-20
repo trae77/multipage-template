@@ -41,6 +41,12 @@ Demo logins (static demo, and `npm run dev`): owner `owner@demo.test` / `demo-ow
 npm ci && npx playwright install chromium && npm run build && npm test && npm run test:e2e
 ```
 
+## Compliance (audit 2026-10-19)
+- `/privacy/` page (a template the business reviews before launch), linked in the footer. A consent line follows every public form (contact, quote, book, order); the login form doesn't get one.
+- `npm run test:a11y` (part of `test:e2e`) runs axe-core over every public demo page at 390 and 1440. It fails on serious or critical violations.
+- Demo seed reviews carry no star ratings, and JSON-LD never includes ratings or reviews (`audit:industry` fails if it does). `--trade` demos are named after their trade ("Sample Restaurant Co."), not the root config.
+- Text links are visitor-started `sms:` links only. This template has no outbound SMS.
+
 ## Configure a client site
 
 Edit `site.config.json`:

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>AI lead responder: simulated demo</title>
+<style>
+:root{--ink:#1a1f2b;--muted:#4a5263;--bg:#f6f7f9;--card:#fff;--brand:#0b5394;--ok:#1d6b36;--line:#cfd5df}
+*{box-sizing:border-box}body{margin:0;font:1.05rem/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+.wrap{max-width:62rem;margin:0 auto;padding:1rem}
+.banner{background:#7a2e00;color:#fff;padding:.75rem 1rem;text-align:center;font-weight:600}
+h1{font-size:1.8rem;margin:.5rem 0}.lede{color:var(--muted);max-width:44rem}
+.tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin:1rem 0}
+button{font:inherit;min-height:44px;padding:.5rem 1rem;border-radius:.5rem;border:2px solid var(--brand);background:#fff;color:var(--brand);cursor:pointer}
+button[aria-pressed="true"],button.primary{background:var(--brand);color:#fff}
+button:focus-visible{outline:3px solid #f2b400;outline-offset:2px}
+.grid{display:grid;gap:1rem;grid-template-columns:1fr}@media(min-width:52rem){.grid{grid-template-columns:3fr 2fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:.75rem;padding:1rem}
+.card h2{font-size:1.15rem;margin:0 0 .5rem}
+ol.chat{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.6rem;min-height:12rem}
+.msg{max-width:88%;padding:.6rem .8rem;border-radius:.8rem;white-space:pre-line}
+.msg .who{display:block;font-size:.85rem;font-weight:700;margin-bottom:.15rem}
+.in{background:#e8ecf2;align-self:flex-start}.out{background:#0b5394;color:#fff;align-self:flex-end}
+.sys{align-self:center;background:#fff;border:1px dashed var(--muted);color:var(--ink);font-size:.95rem}
+.alert{background:#e6f2ea;border:1px solid var(--ok);color:#123f20;align-self:stretch;max-width:100%}
+ol.steps{margin:0;padding-left:1.25rem}ol.steps li{margin:.3rem 0;color:var(--muted)}ol.steps li.done{color:var(--ink);font-weight:600}
+ol.steps li.done::after{content:" ✓";color:var(--ok)}
+.note{font-size:.95rem;color:var(--muted)}a{color:var(--brand)}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<p class="banner">SIMULATION. Sample people and a sample business. No real texts, emails, or calls are sent from this page.</p>
+<main class="wrap">
+<h1>AI lead responder for local trades (simulated)</h1>
+<p class="lede">This shows what the n8n workflow in <a href="https://github.com/trae77/multipage-template/tree/main/lead-responder">lead-responder/</a> does: a new lead gets an instant reply, two or three qualifying questions, an open booking time, and the owner gets an alert. Pick a scenario and press Play.</p>
+<div class="tabs" role="group" aria-label="Scenario">
+<button type="button" data-scn="form" aria-pressed="true">Plumbing: website form (texts allowed)</button>
+<button type="button" data-scn="call" aria-pressed="false">Plumbing: missed call</button>
+<button type="button" data-scn="hvac" aria-pressed="false">HVAC: website form (email only)</button>
+</div>
+<div class="tabs"><button type="button" class="primary" id="play">Play</button><button type="button" id="all">Show all at once</button></div>
+<div class="grid">
+<section class="card" aria-labelledby="conv-h"><h2 id="conv-h">Conversation</h2><ol class="chat" id="chat" aria-live="polite"></ol></section>
+<section class="card" aria-labelledby="steps-h"><h2 id="steps-h">Workflow steps</h2>
+<ol class="steps" id="steps"><li>Lead received</li><li>Consent checked</li><li>Instant reply</li><li>Qualifying questions</li><li>Booking time offered</li><li>Owner alert</li></ol>
+<p class="note" id="scn-note"></p></section>
+</div>
+<p class="note">Replies here are scripted. In the workflow they come from an LLM step when a key is set, or a fixed template when it is not. Texts only go out when the person ticked the SMS box on the form, which is unchecked by default. Booking times come from a stub list in this demo.</p>
+</main>
+<script>
+const S = {
+  form: { note: 'Form lead with the SMS consent box ticked, so the reply goes by text (mock sender).', steps: [
+    [0, 'in', 'Website quote form', 'Jordan Sample · Leak repair\n"Drip under the kitchen sink."\n☑ Text me about this request'],
+    [1, 'sys', 'Workflow', 'SMS consent: yes → reply by text'],
+    [2, 'out', 'Sample Plumbing Co. (text)', 'Hi Jordan, thanks for your leak repair request. This is Sample Plumbing Co.'],
+    [3, 'out', 'Sample Plumbing Co. (text)', '1. Is water actively leaking right now?\n2. Which fixture or area is it?\n3. Is the home on city water or a well?'],
+    [3, 'in', 'Jordan', 'Slow drip, kitchen, city water.'],
+    [4, 'out', 'Sample Plumbing Co. (text)', 'The next open time is tomorrow 1:00 PM. Reply YES to request it, or suggest another time. Reply STOP to opt out, HELP for help.'],
+    [4, 'in', 'Jordan', 'YES'],
+    [5, 'alert', 'Owner alert', 'New plumbing lead (quote form): Jordan Sample, (555) 010-0142. Kitchen sink drip, city water. Requested tomorrow 1:00 PM. Please confirm.'] ] },
+  call: { note: 'Missed-call text-back is shown turned on. It is off by default in the workflow (MISSED_CALL_SMS=off); see the README consent notes.', steps: [
+    [0, 'in', 'Phone system', 'Missed call from (555) 010-0188 · no answer'],
+    [1, 'sys', 'Workflow', 'Missed-call text-back: on (demo setting) → reply by text'],
+    [2, 'out', 'Sample Plumbing Co. (text)', 'Hi, sorry we missed your call. This is Sample Plumbing Co.'],
+    [3, 'out', 'Sample Plumbing Co. (text)', '1. Is water actively leaking right now?\n2. Which fixture or area is it?'],
+    [3, 'in', 'Caller', 'Water heater, no hot water since this morning.'],
+    [4, 'out', 'Sample Plumbing Co. (text)', 'The next open time is tomorrow 1:00 PM. Reply YES to request it, or suggest another time. Reply STOP to opt out, HELP for help.'],
+    [5, 'alert', 'Owner alert', 'New plumbing lead (missed call): (555) 010-0188. Water heater, no hot water. Offered tomorrow 1:00 PM. Call back.'] ] },
+  hvac: { note: 'SMS box not ticked, so the workflow replies by email only (mock sender).', steps: [
+    [0, 'in', 'Website contact form', 'Casey Sample · Furnace repair\n"Furnace blows cold air."\n☐ Text me about this request'],
+    [1, 'sys', 'Workflow', 'SMS consent: no → reply by email'],
+    [2, 'out', 'Sample HVAC Co. (email)', 'Hi Casey, thanks for your furnace repair request. This is Sample HVAC Co.'],
+    [3, 'out', 'Sample HVAC Co. (email)', '1. Is it heating, cooling, or both that is not working?\n2. About how old is the system?\n3. Is anyone in the home at health risk from the temperature?'],
+    [4, 'out', 'Sample HVAC Co. (email)', 'The next open time is tomorrow 1:00 PM. Reply to request it, or suggest another time.'],
+    [5, 'alert', 'Owner alert', 'New HVAC lead (contact form): Casey Sample, casey@example.com. Furnace blows cold air. Replied by email, offered tomorrow 1:00 PM.'] ] } };
+const chat = document.getElementById('chat'), steps = [...document.querySelectorAll('#steps li')], note = document.getElementById('scn-note');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; let scn = 'form', timer;
+const add = ([st, cls, who, text]) => { const li = document.createElement('li'); li.className = 'msg ' + cls; const w = document.createElement('span'); w.className = 'who'; w.textContent = who; li.append(w, document.createTextNode(text)); chat.append(li); for (let i = 0; i <= st; i++) steps[i].classList.add('done'); };
+const reset = () => { clearTimeout(timer); chat.textContent = ''; steps.forEach((s) => s.classList.remove('done')); note.textContent = S[scn].note; };
+const play = (instant) => { reset(); const q = S[scn].steps.slice(); if (instant || reduce) return q.forEach(add); const next = () => { const s = q.shift(); if (!s) return; add(s); timer = setTimeout(next, 900); }; next(); };
+document.querySelectorAll('[data-scn]').forEach((b) => b.addEventListener('click', () => { scn = b.dataset.scn; document.querySelectorAll('[data-scn]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); reset(); }));
+document.getElementById('play').addEventListener('click', () => play(false));
+document.getElementById('all').addEventListener('click', () => play(true));
+play(true);
+</script>
+</body>
+</html>

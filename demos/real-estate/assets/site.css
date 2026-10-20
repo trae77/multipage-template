@@ -175,6 +175,7 @@ dl#quote-summary dt { font-weight: 700; } dl#quote-summary dd { margin: 0 0 .5re
 }
 .form-consent { font-size: .9rem; margin: .5rem 0 0; }
 .form-consent a, .prose a { text-decoration: underline; }
+.sms-consent{display:flex;gap:.5rem;align-items:flex-start;margin:.75rem 0}.sms-consent input{width:1.25rem;height:1.25rem;margin-top:.2rem;flex:none}
 
 :root{--brand-primary:#1E3A8A;--brand-accent:#D4A017;--accent:#D4A017;--on-accent:#0f172a;--on-primary:#ffffff;--link:#7586b8;--hero-tint:#e9ebf3;--hero-deep:#11204c;--border-strong:rgba(255,255,255,.25);--focus:#93c5fd}
 /* Theme: premium-dark (from client-site-templates tools/library.mjs) */

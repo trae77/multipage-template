@@ -128,6 +128,9 @@ function initGallery() {
 document.addEventListener('input', (e) => { if (e.target.matches('[data-ba]')) e.target.closest('.ba').style.setProperty('--split', e.target.value + '%'); });
 const setStatus = (form, msg, err) => { const s = $('.status', form); s.textContent = msg; s.classList.toggle('err', !!err); };
 const formData = (form) => Object.fromEntries(new FormData(form).entries());
+// Optional: forward a lead to the n8n lead responder (SITE.leadWebhook is only set when LEAD_WEBHOOK_URL is configured).
+const toWebhook = (source, d) => { if (!SITE.leadWebhook) return; const body = { source, business: SITE.name, trade: SITE.trade, ...d, sms_consent: d.sms_consent === 'yes', page: location.pathname, submittedAt: new Date().toISOString() };
+  fetch(SITE.leadWebhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true }).catch(() => {}); };
 const pill = (s) => `<span class="pill ${/accept|paid|confirm|done|complete/i.test(s) ? 'ok' : /declin|cancel|lost/i.test(s) ? 'bad' : 'warn'}">${esc(s)}</span>`;
 const sample = (x) => (x?.sample ? '<span class="sample-tag">Sample</span><br>' : '');
 
@@ -155,7 +158,7 @@ const pages = {
       $$('[required]', form).forEach((i) => i.setAttribute('aria-invalid', String(!i.value.trim())));
       if (!d.name.trim() || !d.phone.trim()) return setStatus(form, 'Name and phone are required.', true);
       const message = `Quote request. Size: ${d.size || 'n/a'}. Condition: ${d.condition}. Timing: ${d.when}.${d.notes ? ' Notes: ' + d.notes : ''}`;
-      try { await store.createLead({ kind: 'quote', name: d.name, phone: d.phone, email: d.email, service: d.service, address: d.address, message }); form.reset(); render(); setStatus(form, SITE.mode === 'demo' ? 'Thanks! (Demo: saved to the owner dashboard in this browser.)' : 'Thanks! We will send your price soon.'); } catch (err) { setStatus(form, err.message, true); } });
+      try { await store.createLead({ kind: 'quote', name: d.name, phone: d.phone, email: d.email, service: d.service, address: d.address, message }); toWebhook('quote-form', { ...d, message }); form.reset(); render(); setStatus(form, SITE.mode === 'demo' ? 'Thanks! (Demo: saved to the owner dashboard in this browser.)' : 'Thanks! We will send your price soon.'); } catch (err) { setStatus(form, err.message, true); } });
   },
   order() {
     const cart = []; const ul = $('#cart'); const form = $('#order-form');
@@ -179,7 +182,7 @@ const pages = {
     form.addEventListener('submit', async (e) => { e.preventDefault(); const d = formData(form);
       const missing = ['name', 'phone', 'message'].filter((k) => !d[k].trim()); $$('[required]', form).forEach((i) => i.setAttribute('aria-invalid', String(!i.value.trim())));
       if (missing.length) return setStatus(form, 'Please fill in: ' + missing.join(', '), true);
-      try { await store.createLead(d); form.reset(); setStatus(form, SITE.mode === 'demo' ? 'Thanks! (Demo: saved to the owner dashboard in this browser.)' : 'Thanks! We got your request and will be in touch.'); } catch (err) { setStatus(form, err.message, true); } });
+      try { await store.createLead(d); toWebhook('contact-form', d); form.reset(); setStatus(form, SITE.mode === 'demo' ? 'Thanks! (Demo: saved to the owner dashboard in this browser.)' : 'Thanks! We got your request and will be in touch.'); } catch (err) { setStatus(form, err.message, true); } });
   },
   book() {
     const form = $('#book-form'); const box = $('#bk-slots'); let chosen = '';
@@ -192,7 +195,7 @@ const pages = {
     form.addEventListener('submit', async (e) => { e.preventDefault(); const d = { ...formData(form), time: chosen };
       if (!d.date || !chosen) return setStatus(form, 'Pick a day and an open time.', true);
       if (!d.name.trim() || !d.phone.trim()) return setStatus(form, 'Name and phone are required.', true);
-      try { await store.createBooking(d); setStatus(form, `Requested ${d.date} at ${chosen}. The owner will confirm.`); form.reset(); box.innerHTML = ''; } catch (err) { setStatus(form, err.message, true); } });
+      try { await store.createBooking(d); toWebhook('booking-form', d); setStatus(form, `Requested ${d.date} at ${chosen}. The owner will confirm.`); form.reset(); box.innerHTML = ''; } catch (err) { setStatus(form, err.message, true); } });
   },
   async login() {
     const form = $('#login-form'); const u = await store.me(); if (u) location.href = ROOT + (u.role === 'owner' ? 'admin/' : 'portal/');

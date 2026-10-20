@@ -197,3 +197,7 @@ tests/                   api.test.js, smoke.mjs (Playwright), screenshots.mjs
 - Notification sending is untested against live providers (only the hook is tested).
 - Editing service pages, FAQ and reviews from the dashboard. These live in config/content files and need a rebuild.
 - SMTP needs `npm i nodemailer`.
+
+## Optional: AI lead responder (n8n)
+
+Set `LEAD_WEBHOOK_URL` (empty by default) to forward quote, contact and booking form leads to the n8n lead responder in [`lead-responder/`](lead-responder/README.md). When the URL is set, the forms also show an optional SMS consent box, which is unchecked by default. The simulated demo is at `demos/lead-responder/`.

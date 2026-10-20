@@ -1,0 +1,465 @@
+{
+  "name": "Lead responder (demo, mock senders)",
+  "nodes": [
+    {
+      "id": "n1",
+      "name": "Lead webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "6f1c2b1e-7c55-4f7e-9a51-1ead0e5ec001",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-responder",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      }
+    },
+    {
+      "id": "n2",
+      "name": "Config (placeholders)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Placeholders only. Real values come from env vars on the n8n host (see README); a value still\n// wrapped in {{ }} counts as \"not set\". No real keys belong in this file.\nconst env = (k, d) => { try { const v = $env[k]; return v === undefined || v === '' ? d : v; } catch (e) { return d; } };\nconst cfg = {\n  business_name: env('BUSINESS_NAME', 'Sample Plumbing Co.'),\n  owner_name: env('OWNER_NAME', 'the owner'),\n  llm_api_key: env('LLM_API_KEY', '{{LLM_API_KEY}}'),\n  llm_base_url: env('LLM_BASE_URL', '{{LLM_BASE_URL}}'),\n  llm_model: env('LLM_MODEL', '{{LLM_MODEL}}'),\n  mock_send_url: env('MOCK_SEND_URL', 'http://mock-sender:8787'),\n  owner_alert_to: env('OWNER_ALERT_TO', '{{OWNER_ALERT_TO}}'),\n  // Off by default. A missed call is not the same as SMS consent; turn on only after the client\n  // has reviewed it with their own counsel (README, consent notes).\n  missed_call_sms: String(env('MISSED_CALL_SMS', 'off')).toLowerCase() === 'on',\n};\nconst set = (v) => typeof v === 'string' && v.trim() !== '' && !/^\\{\\{.*\\}\\}$/.test(v.trim());\ncfg.llm_ready = set(cfg.llm_api_key) && set(cfg.llm_base_url) && set(cfg.llm_model);\nreturn [{ json: { ...$input.first().json, config: cfg } }];\n"
+      }
+    },
+    {
+      "id": "n3",
+      "name": "Normalize lead + consent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Accepts a website form lead (multipage-template LEAD_WEBHOOK_URL) or a simulated\n// Twilio-style missed-call status callback (CallStatus no-answer/busy/failed, From, To).\nconst raw = $input.first().json; const b = raw.body || raw;\nconst cfg = raw.config;\nconst digits = (p) => String(p || '').replace(/[^\\d+]/g, '');\nconst missed = !!(b.CallSid || b.CallStatus || b.source === 'missed-call');\nconst tradeKey = String(b.trade || '').toLowerCase();\nconst trade = /\\b(hvac|heat|heating|air|ac|a\\/c|furnace|cooling)\\b/.test(tradeKey + ' ' + (b.service || '')) ? 'hvac' : 'plumbing';\nconst consent = b.sms_consent === true || b.sms_consent === 'yes' || b.sms_consent === 'true' || b.sms_consent === 'on';\nconst lead = {\n  id: 'lead_' + Date.now().toString(36),\n  source: missed ? 'missed-call' : (b.source || 'web-form'),\n  trade,\n  name: String(b.name || '').trim() || null,\n  first_name: String(b.name || '').trim().split(/\\s+/)[0] || null,\n  phone: digits(missed ? b.From : b.phone) || null,\n  email: String(b.email || '').trim() || null,\n  service: String(b.service || '').trim() || null,\n  message: String(b.message || b.notes || '').trim() || null,\n  address: String(b.address || '').trim() || null,\n  call_status: missed ? (b.CallStatus || 'no-answer') : null,\n  received_at: new Date().toISOString(),\n  // SMS only with the (unchecked by default) consent box ticked. A missed call is NOT SMS consent;\n  // missed-call text-back only runs when MISSED_CALL_SMS=on (default off; see README).\n  sms_consent: missed ? !!(cfg && cfg.missed_call_sms) : consent,\n};\nlead.reply_channel = lead.sms_consent && lead.phone ? 'sms' : (lead.email ? 'email' : 'owner-callback');\nreturn [{ json: { lead, config: cfg } }];\n"
+      }
+    },
+    {
+      "id": "n4",
+      "name": "Offer booking slot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Stub availability list. Replace with a real calendar lookup for a client (README).\nconst { lead, config } = $input.first().json;\nconst stub = ['tomorrow 9:00 AM', 'tomorrow 1:00 PM', 'the day after tomorrow 10:00 AM'];\nconst busy = ['tomorrow 9:00 AM'];\nconst open = stub.filter((s) => !busy.includes(s));\nreturn [{ json: { lead, config, slots: open, offered_slot: open[0] || null } }];\n"
+      }
+    },
+    {
+      "id": "n5",
+      "name": "LLM key set?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.config.llm_ready }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n6",
+      "name": "LLM (OpenAI-compatible)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        200
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.config.llm_base_url }}/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.config.llm_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: $json.config.llm_model, temperature: 0.3, response_format: { type: 'json_object' }, messages: [\n { role: 'system', content: 'You write the first reply for a local ' + $json.lead.trade + ' business named ' + $json.config.business_name + '. Facts only: do not quote prices, promise arrival times, or claim licenses. Return JSON {\"reply\": one or two short friendly sentences using the first name if given, \"questions\": 2 or 3 short qualifying questions}.' },\n { role: 'user', content: JSON.stringify({ name: $json.lead.first_name, source: $json.lead.source, service: $json.lead.service, message: $json.lead.message }) } ] }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      }
+    },
+    {
+      "id": "n7",
+      "name": "Compose reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Uses the LLM reply when the HTTP node returned one; otherwise a fixed template (no key needed).\nconst base = $('Offer booking slot').first().json; const { lead, config, offered_slot } = base;\nconst r = $input.first().json; let llm = null;\ntry { const c = r.choices?.[0]?.message?.content; if (c) { const p = JSON.parse(c.replace(/^```(json)?|```$/g, '').trim()); if (p.reply && Array.isArray(p.questions)) llm = p; } } catch (e) {}\nconst Q = {\n  plumbing: ['Is water actively leaking right now?', 'Which fixture or area is it (kitchen, bath, water heater, main line)?', 'Is the home on city water or a well?'],\n  hvac: ['Is it heating, cooling, or both that is not working?', 'About how old is the system?', 'Is anyone in the home at health risk from the temperature?'],\n};\nconst hi = lead.first_name ? `Hi ${lead.first_name}, ` : 'Hi, ';\nconst why = lead.source === 'missed-call' ? 'sorry we missed your call' : `thanks for your ${lead.service ? lead.service.toLowerCase() + ' ' : ''}request`;\nconst fallback = { reply: `${hi}${why}. This is ${config.business_name.replace(/\\.$/, '')}.`, questions: Q[lead.trade].slice(0, 3) };\nconst out = llm || fallback;\nconst slotLine = offered_slot ? `The next open time is ${offered_slot}. Reply YES to request it, or suggest another time.` : 'We will call to set a time.';\nconst stop = lead.reply_channel === 'sms' ? ' Reply STOP to opt out, HELP for help.' : '';\nconst text = [out.reply, ...out.questions.map((q, i) => `${i + 1}. ${q}`), slotLine].join('\\n') + stop;\nreturn [{ json: { lead, config, offered_slot, reply: { channel: lead.reply_channel, generated_by: llm ? 'llm' : 'template', text, questions: out.questions } } }];\n"
+      }
+    },
+    {
+      "id": "n8",
+      "name": "SMS allowed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c2",
+              "leftValue": "={{ $json.reply.channel }}",
+              "rightValue": "sms",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n14",
+      "name": "Email on file?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        420
+      ],
+      "notes": "No consent and no email (e.g. a missed call): no auto-reply, the owner alert asks for a call back.",
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c3",
+              "leftValue": "={{ $json.lead.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n9",
+      "name": "Send SMS (MOCK)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        200
+      ],
+      "notes": "MOCK sender: posts to the local log server, never to a real SMS/email provider.",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.config.mock_send_url }}/sms",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ to: $json.lead.phone, text: $json.reply.text, lead_id: $json.lead.id }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "n10",
+      "name": "Send email (MOCK)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1980,
+        400
+      ],
+      "notes": "MOCK sender: posts to the local log server, never to a real SMS/email provider.",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.config.mock_send_url }}/email",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ to: $json.lead.email, subject: \"Re: your request to \" + $json.config.business_name, text: $json.reply.text, lead_id: $json.lead.id, channel: $json.reply.channel }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "n11",
+      "name": "Build owner alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const d = $('Compose reply').first().json; const sent = $input.first().json;\nconst l = d.lead;\nreturn [{ json: { ...d, send_result: sent, owner_alert: {\n  to: d.config.owner_alert_to, channel: 'mock',\n  text: `New ${l.trade} lead (${l.source}): ${l.name || 'unknown name'} ${l.phone || ''} ${l.email || ''}. ${l.service || ''} ${l.message || ''}`.replace(/\\s+/g, ' ').trim()\n    + (d.reply.channel === 'owner-callback' ? ' | No auto-reply sent (no SMS consent, no email). Please call back.' : ` | Auto-reply via ${d.reply.channel} (${d.reply.generated_by}). Offered: ${d.offered_slot || 'none'}.`),\n} } }];\n"
+      }
+    },
+    {
+      "id": "n12",
+      "name": "Owner alert (MOCK)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2420,
+        300
+      ],
+      "notes": "MOCK sender: posts to the local log server, never to a real SMS/email provider.",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.config.mock_send_url }}/owner-alert",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ to: $json.owner_alert.to, text: $json.owner_alert.text, lead_id: $json.lead.id }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "n13",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2640,
+        300
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, simulated: true, lead: $('Build owner alert').first().json.lead, reply: $('Build owner alert').first().json.reply, offered_slot: $('Build owner alert').first().json.offered_slot, owner_alert: $('Build owner alert').first().json.owner_alert }) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Lead webhook": {
+      "main": [
+        [
+          {
+            "node": "Config (placeholders)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config (placeholders)": {
+      "main": [
+        [
+          {
+            "node": "Normalize lead + consent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize lead + consent": {
+      "main": [
+        [
+          {
+            "node": "Offer booking slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Offer booking slot": {
+      "main": [
+        [
+          {
+            "node": "LLM key set?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM key set?": {
+      "main": [
+        [
+          {
+            "node": "LLM (OpenAI-compatible)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Compose reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM (OpenAI-compatible)": {
+      "main": [
+        [
+          {
+            "node": "Compose reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose reply": {
+      "main": [
+        [
+          {
+            "node": "SMS allowed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SMS allowed?": {
+      "main": [
+        [
+          {
+            "node": "Send SMS (MOCK)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email on file?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email on file?": {
+      "main": [
+        [
+          {
+            "node": "Send email (MOCK)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build owner alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send SMS (MOCK)": {
+      "main": [
+        [
+          {
+            "node": "Build owner alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send email (MOCK)": {
+      "main": [
+        [
+          {
+            "node": "Build owner alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build owner alert": {
+      "main": [
+        [
+          {
+            "node": "Owner alert (MOCK)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Owner alert (MOCK)": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

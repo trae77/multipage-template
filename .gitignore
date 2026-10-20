@@ -4,3 +4,4 @@ dist/
 .env
 test-results/
 dist-demo/
+mock-sent.jsonl

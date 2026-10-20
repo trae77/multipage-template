@@ -15,6 +15,8 @@ const opt = (k, d) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i
 const DEMO = args.includes('--demo');
 const readJson = (p) => JSON.parse(fs.readFileSync(path.resolve(ROOT, p), 'utf8'));
 const cfg = readJson(opt('config', 'site.config.json'));
+// Optional lead-responder hook (lead-responder/README.md). Empty by default = no change to the site.
+const LEAD_WEBHOOK = (() => { const u = String(process.env.LEAD_WEBHOOK_URL || cfg.leadWebhookUrl || '').trim(); return /^(https:\/\/|http:\/\/(localhost|127\.0\.0\.1)[:/])/.test(u) ? u : ''; })();
 const TRADES = readJson('presets/trades.json');
 const THEMES = readJson('presets/themes.json');
 const content = readJson(opt('content', 'content/sample.json'));
@@ -168,10 +170,12 @@ ${body(pre)}
 <div><strong>Service areas</strong><br>${(B.serviceAreas || []).map(esc).join('<br>')}${B.hours ? `<br><br><strong>Hours</strong><br>${esc(B.hours)}` : ''}${B.license ? `<br><br>${esc(B.license)}` : ''}</div>
 </div></footer>
 ${F.callBar !== false ? `<nav class="call-bar" aria-label="Quick actions"><a class="cb-alt" href="${tel}">Call</a><a class="cb-alt" href="${sms}">Text</a><a class="cb-call" href="${cta}">${esc(ACTION_LABEL)}</a></nav>` : ''}
-<script>window.SITE=${JSON.stringify({ mode: DEMO ? 'demo' : 'api', name: B.name, phone: B.phone, email: B.email, booking: cfg.booking, payLink: /^https:\/\/(buy|checkout)\.stripe\.com\//.test(cfg.payments?.stripePaymentLink || '') ? cfg.payments.stripePaymentLink : '', features: F, trade: tradeKey, action: ACTION, ordering: { squareUrl: /^https:\/\//.test(cfg.ordering?.squareUrl || '') ? cfg.ordering.squareUrl : '' }, services: services.map((s) => s.name) }).replace(/</g, '\\u003c')};</script>
+<script>window.SITE=${JSON.stringify({ mode: DEMO ? 'demo' : 'api', name: B.name, phone: B.phone, email: B.email, booking: cfg.booking, payLink: /^https:\/\/(buy|checkout)\.stripe\.com\//.test(cfg.payments?.stripePaymentLink || '') ? cfg.payments.stripePaymentLink : '', features: F, trade: tradeKey, action: ACTION, ordering: { squareUrl: /^https:\/\//.test(cfg.ordering?.squareUrl || '') ? cfg.ordering.squareUrl : '' }, services: services.map((s) => s.name), ...(LEAD_WEBHOOK ? { leadWebhook: LEAD_WEBHOOK } : {}) }).replace(/</g, '\\u003c')};</script>
 ${DEMO ? `<script>window.SEED=${JSON.stringify(content).replace(/</g, '\\u003c')};</script>` : ''}
 <script type="module" src="${pre}assets/app.js"></script>
 </body></html>`;
+  // SMS consent box (never pre-checked) only when a lead webhook is configured.
+  if (LEAD_WEBHOOK) html = html.replace(/(<form\b[^>]*id="(lead-form|book-form|quote-form)"[\s\S]*?)(<button class="btn" type="submit">)/g, (m, a, id, b) => `${a}<div class="sms-consent"><input type="checkbox" id="${id}-sms" name="sms_consent" value="yes"> <label for="${id}-sms">Optional: text me about this request. Msg frequency varies. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. Consent is not required to buy.</label></div>${b}`);
   // Compliance audit 2026-10-19 #2: consent line under every form that collects details (not the login form).
   html = html.replace(/(<form\b(?![^>]*id="login-form")[^>]*>[\s\S]*?<\/form>)(?!<p class="form-consent")/g, `$1<p class="form-consent">We'll only use this to reply to your request. See our <a href="${pre}privacy/">Privacy Policy</a>.</p>`);
   const file = path.join(OUT, rel, 'index.html'); fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, html);

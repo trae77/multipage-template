@@ -1,6 +1,10 @@
 {
   "mode": "demo",
   "trade": "salon-barber",
+  "resolvedFrom": "salon-barber",
+  "money": "book",
+  "matrixVersion": "5.1.0",
+  "allowReason": null,
   "theme": "premium-dark",
   "layout": "salon-book",
   "hero": "centered",

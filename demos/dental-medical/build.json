@@ -1,6 +1,10 @@
 {
   "mode": "demo",
   "trade": "dental-medical",
+  "resolvedFrom": "dental-medical",
+  "money": "book",
+  "matrixVersion": "5.1.0",
+  "allowReason": null,
   "theme": "clean-minimal",
   "layout": "care-visit",
   "hero": "centered",

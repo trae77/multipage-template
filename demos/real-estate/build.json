@@ -1,6 +1,10 @@
 {
   "mode": "demo",
   "trade": "real-estate",
+  "resolvedFrom": "real-estate",
+  "money": "listings",
+  "matrixVersion": "5.1.0",
+  "allowReason": null,
   "theme": "premium-dark",
   "layout": "re-search",
   "hero": "search",

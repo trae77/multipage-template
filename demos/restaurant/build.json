@@ -1,6 +1,10 @@
 {
   "mode": "demo",
   "trade": "restaurant",
+  "resolvedFrom": "restaurant",
+  "money": "order",
+  "matrixVersion": "5.1.0",
+  "allowReason": null,
   "theme": "clean-minimal",
   "layout": "rest-order",
   "hero": "menu-first",

@@ -1,6 +1,10 @@
 {
   "mode": "demo",
   "trade": "roofing",
+  "resolvedFrom": "roofing",
+  "money": "quote",
+  "matrixVersion": "5.1.0",
+  "allowReason": null,
   "theme": "bold-industrial",
   "layout": null,
   "hero": null,

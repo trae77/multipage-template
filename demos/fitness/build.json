@@ -1,6 +1,10 @@
 {
   "mode": "demo",
   "trade": "fitness",
+  "resolvedFrom": "fitness",
+  "money": "schedule",
+  "matrixVersion": "5.1.0",
+  "allowReason": null,
   "theme": "bold-industrial",
   "layout": "fit-schedule",
   "hero": "schedule",

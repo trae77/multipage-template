@@ -3,7 +3,16 @@ import express from 'express'; import multer from 'multer'; import bcrypt from '
 import crypto from 'node:crypto'; import fs from 'node:fs'; import path from 'node:path'; import url from 'node:url';
 import { openDb, SCHEMA } from './db.js'; import { notify, notifyStatus } from './notify.js';
 import { slotsFor } from '../src/public/slots.js';
+import { mountForgotLogin } from './forgot-login.js';
 const ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
+
+// Strict CSP: no inline script; Turnstile is the only third-party script/frame. Add map/booking origins per client in site config.
+export const CSP = "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com https://www.google.com; form-action 'self'; frame-ancestors 'self'; base-uri 'self'; object-src 'none'";
+
+export function cspFor(config = {}) {
+  const a = config.analytics || {}; const extra = a.provider === 'plausible' ? ' https://plausible.io' : a.provider === 'ga4' ? ' https://www.googletagmanager.com https://www.google-analytics.com' : '';
+  return CSP.replace("script-src 'self'", "script-src 'self'" + (a.id ? extra : '')).replace("connect-src 'self'", "connect-src 'self'" + (a.id ? extra : ''));
+}
 
 export async function createApp(opts = {}) {
   const dataDir = path.resolve(opts.dataDir || process.env.DATA_DIR || path.join(ROOT, 'data'));
@@ -19,7 +28,9 @@ export async function createApp(opts = {}) {
   if (ownerEmail && ownerPass) {
     const ex = await db.get('SELECT id FROM users WHERE email=?', [ownerEmail]);
     const hash = bcrypt.hashSync(ownerPass, 10);
-    if (ex) await db.run('UPDATE users SET password_hash=?, role=? WHERE id=?', [hash, 'owner', ex.id]);
+    // Env seeds the owner once; a later forgot-password reset must survive restarts (set OWNER_PASSWORD_FORCE=1 to re-apply env).
+    if (ex && (opts.ownerPasswordForce ?? process.env.OWNER_PASSWORD_FORCE === '1')) await db.run('UPDATE users SET password_hash=?, role=? WHERE id=?', [hash, 'owner', ex.id]);
+    else if (ex) await db.run('UPDATE users SET role=? WHERE id=?', ['owner', ex.id]);
     else await db.run('INSERT INTO users(role,name,email,password_hash) VALUES(?,?,?,?)', ['owner', config.business?.name || 'Owner', ownerEmail, hash]);
   }
   if (opts.seedDemo ?? process.env.SEED_DEMO_DATA === 'true') {
@@ -31,7 +42,9 @@ export async function createApp(opts = {}) {
   const app = express();
   app.disable('x-powered-by');
   app.use(express.json({ limit: '200kb' }));
-  app.use((req, res, next) => { res.set({ 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'X-Frame-Options': 'SAMEORIGIN' }); next(); });
+  app.use((req, res, next) => { res.set({ 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'X-Frame-Options': 'SAMEORIGIN', 'Content-Security-Policy': cspFor(config) }); next(); });
+  await mountForgotLogin(app, { db, publicOrigin: opts.publicOrigin ?? process.env.PUBLIC_ORIGIN ?? config.siteUrl, siteName: config.business?.name || 'your account', fetchImpl: opts.fetchImpl || fetch, turnstileSecret: opts.turnstileSecret ?? process.env.TURNSTILE_SECRET, sendEmail: opts.sendEmail, now: opts.nowMs,
+    users: { findByEmail: (e) => db.get('SELECT id, email FROM users WHERE email=?', [e]), setPassword: (id, pw) => db.run('UPDATE users SET password_hash=? WHERE id=?', [bcrypt.hashSync(pw, 10), id]), revokeSessions: (id) => db.run('DELETE FROM sessions WHERE user_id=?', [id]) } });
   const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
   const bad = (res, code, error) => res.status(code).json({ error });
   const str = (v, max = 2000) => String(v ?? '').trim().slice(0, max);

@@ -2,7 +2,9 @@
 // window.SITE.mode === 'demo' -> DemoStore (localStorage, no server). Otherwise ApiStore (/api).
 import { esc, md } from './md.js';
 import { slotsFor, isValidSlot } from './slots.js';
-const SITE = window.SITE || {}; const ROOT = document.body.dataset.root || '/';
+const readJson = (id) => { const el = document.getElementById(id); try { return el ? JSON.parse(el.textContent) : null; } catch { return null; } };
+const SITE = window.SITE || readJson('site-data') || {}; window.SITE = SITE;
+if (!window.SEED) window.SEED = readJson('seed-data') || undefined; const ROOT = document.body.dataset.root || '/';
 const $ = (s, el = document) => el.querySelector(s); const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const money = (c) => '$' + (Number(c || 0) / 100).toFixed(2);
 const total = (lines) => (lines || []).reduce((t, l) => t + Math.round(Number(l.qty || 0) * Number(l.unit || 0)), 0);

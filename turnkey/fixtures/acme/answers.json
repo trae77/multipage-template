@@ -1,0 +1,15 @@
+{
+  "business": { "name": "Acme Test Co", "owner": "Pat Tester", "trade": "Handyman and repairs", "licenseInsured": "Fake test client for setup dry-runs. Not a real business." },
+  "contact": { "phone": "(303) 555-0142", "email": "hello@acmetestco.test" },
+  "location": { "mapAddress": "Denver, CO", "serviceArea": "Denver, Aurora and Lakewood" },
+  "hours": "Mon-Sat 8am-6pm",
+  "site": { "domain": "need one", "size": "multi-page" },
+  "brand": { "logo": "logo.png", "photos": [], "tagline": "Small repairs done right, on time.", "primaryColor": "#1f4e79" },
+  "services": ["Drywall repair", "Door and lock fixes", "Fence repair", "Fixture installs"],
+  "features": { "chat": true },
+  "owner": { "loginEmail": "owner@acmetestco.test" },
+  "payment": { "link": "" },
+  "preview": { "url": "" },
+  "feedback": { "approved": "", "changes": "", "missing": "" },
+  "forms": { "destination": "owner-dashboard", "turnstileSiteKey": "1x00000000000000000000AA" }
+}

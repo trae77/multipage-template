@@ -1,0 +1,5 @@
+[extend]
+useDefault = true
+[allowlist]
+description = "Demo dashboard localStorage key names (tk-demo-v1:*, bf-demo-v1:*) and Cloudflare's public Turnstile TEST site keys are not secrets"
+regexes = ['''(tk|bf)-demo-v1:[a-z]+''', '''[123]x0000000000000000000000?A[ABF]''', '''[123]x00000000000000000000(AA|AB|FF)''']

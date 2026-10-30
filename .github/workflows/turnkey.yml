@@ -1,0 +1,43 @@
+name: turnkey
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  turnkey:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: turnkey
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: turnkey/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium && sudo apt-get install -y ripgrep
+      - name: Install gitleaks
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz | tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+      - name: Tests (worker security, schema, placeholder scan, login-safety gate, resize)
+        run: npm test
+      - name: Build + all checks on test client (Acme Test Co, dry run)
+        run: npm run dry-run:acme
+      - name: ops/standards qa-gate.sh (local preview through the real Worker)
+        run: npm run qa-gate
+      - name: Login-safety gate must be 8/8
+        run: npm run dry-run:acme | tee /tmp/dry.txt && grep -q "PASS  login-safety gate (8/8)" /tmp/dry.txt
+      - name: Template config must still fail the placeholder scan
+        run: |
+          if node setup.mjs --answers client.config.json --skip-overflow --dry-run; then echo "blank template unexpectedly passed"; exit 1; fi
+      - name: gitleaks (PR commits)
+        if: github.event_name == 'pull_request'
+        working-directory: .
+        run: gitleaks git --config turnkey/.gitleaks.toml --no-banner --redact --log-opts="origin/${{ github.base_ref }}..HEAD"

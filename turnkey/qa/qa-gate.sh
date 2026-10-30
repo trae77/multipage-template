@@ -14,7 +14,12 @@ g(){ rg -qi "$2" "$REPO" -g '!node_modules' -g '!dist*' && ok "$1" || bad "$1 no
 g "A2 forgot-password" 'forgot|reset[-_ ]?password'
 g "A3 rate limit" 'rate.?limit|RL_MAX|lockout'
 g "A4 turnstile" 'turnstile'
-curl -s "$URL" | grep -Eqi 'href="[^"]*(owner|admin|demo/owner)' && bad "D2 owner/demo link in public home menu" || ok "D2 no owner link on home"
+# D2 on the RENDERED DOM (SPAs build nav in JS; curl alone false-PASSes). Browser unavailable => FAIL, never PASS.
+D2JS="${D2_RENDER:-$(dirname "$0")/d2-render.mjs}"
+if [[ -f $D2JS ]] && command -v node >/dev/null; then node "$D2JS" "$URL"; rc=$?; else rc=2; fi
+if [[ $rc == 0 ]]; then ok "D2 no visible owner/login link in rendered nav/footer (headless chromium)"
+elif [[ $rc == 1 ]]; then bad "D2 visible owner/login link in rendered nav/footer"
+else curl -s "$URL" | grep -Eqi 'href="[^"]*(owner|admin|login|demo/owner)' && bad "D2 owner/login link in raw HTML" || bad "D2 browser unavailable: curl fallback cannot prove a JS-built nav is clean"; fi
 for k in A1 A2 A3 A4 A6 A7 C1 C2 D1 E1 E2 G1 H1 H2 U1; do
   grep -Eq "^$k: (PASS|N/A) .+" "$EV" 2>/dev/null && ok "$k evidence" || bad "$k manual evidence missing in $EV"; done
 [[ $fail == 0 ]] && echo "QA GATE: PASS" || echo "QA GATE: FAIL — not done, do not ask William"; exit $fail

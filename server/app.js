@@ -3,7 +3,8 @@ import express from 'express'; import multer from 'multer'; import bcrypt from '
 import crypto from 'node:crypto'; import fs from 'node:fs'; import path from 'node:path'; import url from 'node:url';
 import { openDb, SCHEMA } from './db.js'; import { notify, notifyStatus } from './notify.js';
 import { slotsFor } from '../src/public/slots.js';
-import { mountForgotLogin } from './forgot-login.js';
+import { mountForgotLogin, turnstileOk } from './forgot-login.js';
+import { makeAccessVerifier } from './owner-access.js';
 const ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
 
 // Strict CSP: no inline script; Turnstile is the only third-party script/frame. Add map/booking origins per client in site config.
@@ -39,12 +40,20 @@ export async function createApp(opts = {}) {
     for (const k of ['projects', 'posts']) await db.run('INSERT OR IGNORE INTO content(key,value) VALUES(?,?)', [k, JSON.stringify(c[k])]);
   }
 
+  // Owner = Cloudflare Access + OWNER_EMAILS (QA L3). OWNER_EMAIL/OWNER_PASSWORD only seed the account row; the
+  // password alone never grants owner. Tests inject opts.verifyOwnerAccess.
+  const verifyOwnerAccess = opts.verifyOwnerAccess || makeAccessVerifier({ teamDomain: process.env.ACCESS_TEAM_DOMAIN, aud: process.env.ACCESS_AUD, ownerEmails: process.env.OWNER_EMAILS || process.env.OWNER_EMAIL, fetchImpl: opts.fetchImpl || fetch });
+  const loginTurnstileSecret = opts.turnstileSecret ?? process.env.TURNSTILE_SECRET;
+  const loginTurnstile = opts.loginTurnstile ?? true; // fail closed; tests may pass false
+  const ownerOk = async (req, u) => { const e = await verifyOwnerAccess(req); return !!e && e === String(u.email).toLowerCase(); };
+
   const app = express();
+  app.locals.settleForgot = () => (fl ? fl.settle() : Promise.resolve());
   app.disable('x-powered-by');
   app.use(express.json({ limit: '200kb' }));
   app.use((req, res, next) => { res.set({ 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'X-Frame-Options': 'SAMEORIGIN', 'Content-Security-Policy': cspFor(config) }); next(); });
-  await mountForgotLogin(app, { db, publicOrigin: opts.publicOrigin ?? process.env.PUBLIC_ORIGIN ?? config.siteUrl, siteName: config.business?.name || 'your account', fetchImpl: opts.fetchImpl || fetch, turnstileSecret: opts.turnstileSecret ?? process.env.TURNSTILE_SECRET, sendEmail: opts.sendEmail, now: opts.nowMs,
-    users: { findByEmail: (e) => db.get('SELECT id, email FROM users WHERE email=?', [e]), setPassword: (id, pw) => db.run('UPDATE users SET password_hash=? WHERE id=?', [bcrypt.hashSync(pw, 10), id]), revokeSessions: (id) => db.run('DELETE FROM sessions WHERE user_id=?', [id]) } });
+  const fl = await mountForgotLogin(app, { db, publicOrigin: opts.publicOrigin ?? process.env.PUBLIC_ORIGIN ?? config.siteUrl, siteName: config.business?.name || 'your account', fetchImpl: opts.fetchImpl || fetch, turnstileSecret: opts.turnstileSecret ?? process.env.TURNSTILE_SECRET, sendEmail: opts.sendEmail, now: opts.nowMs,
+    users: { findByEmail: (e) => db.get("SELECT id, email FROM users WHERE email=? AND role != 'owner'", [e]), findById: (id) => db.get("SELECT id, email, role FROM users WHERE id=?", [id]), setPassword: (id, pw) => db.run('UPDATE users SET password_hash=? WHERE id=?', [bcrypt.hashSync(pw, 10), id]), revokeSessions: (id) => db.run('DELETE FROM sessions WHERE user_id=?', [id]) } });
   const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
   const bad = (res, code, error) => res.status(code).json({ error });
   const str = (v, max = 2000) => String(v ?? '').trim().slice(0, max);
@@ -58,6 +67,7 @@ export async function createApp(opts = {}) {
     const tok = (req.get('authorization') || '').replace(/^Bearer /, '');
     const row = tok && await db.get("SELECT u.* FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token=? AND s.expires > datetime('now')", [tok]);
     if (!row) return bad(res, 401, 'Please log in');
+    if (row.role === 'owner' && !(await ownerOk(req, row))) return bad(res, 403, 'Owner access requires Cloudflare Access');
     if (role && row.role !== role) return bad(res, 403, 'Not allowed');
     req.user = row; req.token = tok; next();
   });
@@ -66,9 +76,23 @@ export async function createApp(opts = {}) {
   const scope = (req) => (req.user.role === 'owner' ? ['1=1', []] : ['customer_id=?', [req.user.id]]);
 
   app.get('/api/health', (_req, res) => res.json({ ok: true, notifications: notifyStatus() }));
+  // Login: honeypot, Turnstile (fail closed), per-IP limit, per-account+IP lockout (5 bad tries -> 15 min),
+  // constant-ish work for unknown emails (dummy bcrypt compare), owner needs Access + OWNER_EMAILS.
+  const DUMMY_HASH = bcrypt.hashSync(crypto.randomBytes(16).toString('hex'), 10);
+  const fails = new Map(); const LOCK_N = 5, LOCK_MS = 15 * 60e3;
   app.post('/api/auth/login', limit(10, 60000), wrap(async (req, res) => {
-    const u = await db.get('SELECT * FROM users WHERE email=?', [str(req.body.email, 200).toLowerCase()]);
-    if (!u || !bcrypt.compareSync(String(req.body.password || ''), u.password_hash)) return bad(res, 401, 'Wrong email or password');
+    const ip = req.headers['cf-connecting-ip'] || req.ip || '';
+    if (typeof req.body.website === 'string' && req.body.website) return bad(res, 401, 'Wrong email or password');
+    if (loginTurnstile && !(await turnstileOk(loginTurnstileSecret, req.body.turnstile, ip, opts.fetchImpl || fetch))) return bad(res, 403, 'Please complete the human check and try again.');
+    const email = str(req.body.email, 200).toLowerCase();
+    const lk = crypto.createHash('sha256').update(email + '|' + ip).digest('hex'); const t = Date.now();
+    const f = (fails.get(lk) || []).filter((x) => t - x < LOCK_MS);
+    if (f.length >= LOCK_N) return bad(res, 429, 'Too many attempts. Try again in 15 minutes.');
+    const u = await db.get('SELECT * FROM users WHERE email=?', [email]);
+    const pwOk = bcrypt.compareSync(String(req.body.password || ''), u ? u.password_hash : DUMMY_HASH);
+    if (!u || !pwOk) { f.push(t); fails.set(lk, f); return bad(res, 401, 'Wrong email or password'); }
+    if (u.role === 'owner' && !(await ownerOk(req, u))) return bad(res, 403, 'Owner sign-in is only available through Cloudflare Access.');
+    fails.delete(lk);
     const token = crypto.randomBytes(32).toString('hex');
     await db.run("INSERT INTO sessions(token,user_id,expires) VALUES(?,?,datetime('now','+14 days'))", [token, u.id]);
     res.json({ token, user: pubUser(u) });
@@ -84,6 +108,13 @@ export async function createApp(opts = {}) {
     if (await db.get('SELECT id FROM users WHERE email=?', [email])) return bad(res, 409, 'Email already used');
     const r = await db.run('INSERT INTO users(role,name,email,phone,password_hash) VALUES(?,?,?,?,?)', ['customer', name, email, str(req.body.phone, 40), bcrypt.hashSync(pw, 10)]);
     res.status(201).json({ id: String(r.id), role: 'customer', name, email });
+  }));
+
+  // Owner re-invite: single-use 48h set-password link for a customer (owner accounts can't be invited).
+  app.post('/api/customers/:id/invite', auth('owner'), wrap(async (req, res) => {
+    const r = await fl.createInvite(Number(req.params.id));
+    if (!r) return bad(res, 404, 'Customer not found');
+    res.set('Cache-Control', 'no-store').json({ link: r.link, expiresAt: new Date(r.expiresAt).toISOString() });
   }));
 
   // --- leads ---

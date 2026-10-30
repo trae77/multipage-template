@@ -22,6 +22,16 @@ services:
         value: /var/data
       - key: OWNER_EMAIL
         sync: false
+      - key: OWNER_EMAILS
+        sync: false
+      - key: ACCESS_TEAM_DOMAIN
+        sync: false
+      - key: ACCESS_AUD
+        sync: false
+      - key: TURNSTILE_SECRET
+        sync: false
+      - key: TURNSTILE_SITE_KEY
+        sync: false
       - key: OWNER_PASSWORD
         sync: false
       - key: SEED_DEMO_DATA

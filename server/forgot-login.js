@@ -5,6 +5,7 @@
 import crypto from 'node:crypto';
 
 export const RESET_TTL_MS = 30 * 60 * 1000;
+export const INVITE_TTL_MS = 48 * 3600 * 1000; // owner re-invite: single use, 48h
 export const LIMITS = { ipPerMin: 3, ipPerHour: 10, emailPerHour: 3, badTokenPerIpPer15m: 10 };
 export const FORGOT_OK = 'If that email has an account, a reset link is on its way. It expires in 30 minutes and works once.';
 // Used when no email sender is configured (no RESEND_API_KEY). Same reply for known and unknown emails.
@@ -13,6 +14,7 @@ export const SCHEMA = `
 CREATE TABLE IF NOT EXISTS password_resets (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, token_hash TEXT NOT NULL UNIQUE, expires_at INTEGER NOT NULL, used_at INTEGER, created_at INTEGER NOT NULL);
 CREATE INDEX IF NOT EXISTS password_resets_user ON password_resets(user_id, created_at);
 CREATE TABLE IF NOT EXISTS auth_audit (id INTEGER PRIMARY KEY AUTOINCREMENT, event TEXT NOT NULL, user_id INTEGER, ip_hash TEXT, created_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS invites (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, token_hash TEXT NOT NULL UNIQUE, expires_at INTEGER NOT NULL, used_at INTEGER, created_at INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS auth_rate (k TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 0, exp INTEGER NOT NULL);
 `;
 const sha = (s) => crypto.createHash('sha256').update(String(s)).digest('hex');
@@ -48,6 +50,7 @@ export async function mountForgotLogin(app, o) {
   const replyMsg = emailOn ? FORGOT_OK : (o.fallbackMessage || fallbackFor(siteName));
   const helpHtml = o.helpHtml || '';
   await db.exec(SCHEMA);
+  const pending = new Set(); // background forgot work (tests can await it)
   const ipOf = (req) => req.headers['cf-connecting-ip'] || req.ip || req.socket.remoteAddress || '';
   const audit = (event, uid, ip) => db.run('INSERT INTO auth_audit (event, user_id, ip_hash, created_at) VALUES (?, ?, ?, ?)', [event, uid || null, ip ? sha('ip:' + ip) : null, now()]);
   async function bump(key, windowMs) {
@@ -81,19 +84,24 @@ post(b,{token:t,password:b.password.value,website:b.website.value,turnstile:tok(
     if ((await bump('fm:' + ip, 60e3)) > LIMITS.ipPerMin || (await bump('fh:' + ip, 3600e3)) > LIMITS.ipPerHour) return res.status(429).json({ error: 'Too many requests. Please wait a minute.' });
     if (!(await turnstileOk(turnstileSecret, b.turnstile, ip, fetchImpl))) return res.status(403).json({ error: 'Please complete the human check and try again.' });
     const email = typeof b.email === 'string' ? b.email.trim().toLowerCase().slice(0, 254) : '';
-    const ok = () => res.json({ ok: true, message: replyMsg });
-    const token = crypto.randomBytes(32).toString('base64url'), h = sha(token);
-    const u = email ? await users.findByEmail(email) : null;
-    if (!u) { if (email) await audit('reset_unknown_email', null, ip); return ok(); }
-    const t = now();
-    const recent = await db.get('SELECT COUNT(*) AS n FROM password_resets WHERE user_id = ? AND created_at > ?', [u.id, t - 3600e3]);
-    if (recent.n >= LIMITS.emailPerHour) { await audit('reset_throttled', u.id, ip); return ok(); }
-    await db.run('UPDATE password_resets SET used_at = ? WHERE user_id = ? AND used_at IS NULL', [t, u.id]);
-    await db.run('INSERT INTO password_resets (user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?)', [u.id, h, t + RESET_TTL_MS, t]);
-    const link = `${String(publicOrigin || '').replace(/\/$/, '')}${resetPath}#token=${token}`;
-    await send({ to: u.email, subject: `Reset your ${siteName} password`, text: `Someone asked to reset your ${siteName} password.\n\nUse this link within 30 minutes (it works once):\n${link}\n\nIf this wasn't you, ignore this email.` });
-    await audit('reset_requested', u.id, ip);
-    return ok();
+    // Timing (QA P2): reply after the same single lookup for every email; token rows, the email send and audit
+    // run after the response (setImmediate), so known and unknown emails take the same time.
+    const u = email ? await users.findByEmail(email) : null; // owners are excluded by findByEmail (QA L3)
+    res.json({ ok: true, message: replyMsg });
+    const work = async () => {
+      if (!u) { if (email) await audit('reset_unknown_email', null, ip); return; }
+      const t = now();
+      const recent = await db.get('SELECT COUNT(*) AS n FROM password_resets WHERE user_id = ? AND created_at > ?', [u.id, t - 3600e3]);
+      if (recent.n >= LIMITS.emailPerHour) { await audit('reset_throttled', u.id, ip); return; }
+      const token = crypto.randomBytes(32).toString('base64url'), h = sha(token);
+      await db.run('UPDATE password_resets SET used_at = ? WHERE user_id = ? AND used_at IS NULL', [t, u.id]);
+      await db.run('INSERT INTO password_resets (user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?)', [u.id, h, t + RESET_TTL_MS, t]);
+      const link = `${String(publicOrigin || '').replace(/\/$/, '')}${resetPath}#token=${token}`;
+      await send({ to: u.email, subject: `Reset your ${siteName} password`, text: `Someone asked to reset your ${siteName} password.\n\nUse this link within 30 minutes (it works once):\n${link}\n\nIf this wasn't you, ignore this email.` });
+      await audit('reset_requested', u.id, ip);
+    };
+    const p = new Promise((r) => setImmediate(r)).then(work).catch((e) => console.error('[forgot] background task failed', e && e.name));
+    pending.add(p); p.finally(() => pending.delete(p));
   } catch (e) { next(e); } });
 
   app.post(`${apiBase}/reset`, async (req, res, next) => { try {
@@ -119,4 +127,46 @@ post(b,{token:t,password:b.password.value,website:b.website.value,turnstile:tok(
     await audit('reset_completed', row.user_id, ip);
     return res.json({ ok: true });
   } catch (e) { next(e); } });
+
+  // --- Owner re-invite (QA L1b): single-use, 48h, hashed, owner accounts excluded. ---
+  const inviteMsg = 'This invite link is invalid, used or expired. Ask the owner to re-send it.';
+  app.get(o.invitePath || '/set-password', (_q, res) => noStore(res).type('html').send(page('Set your password', `<form id="fl-reset" data-api="${apiBase}/invite/accept" data-min="${minPassword}"><label>New password<input type="password" name="password" autocomplete="new-password" minlength="${minPassword}" maxlength="128" required></label><label>Confirm<input type="password" name="confirm" autocomplete="new-password" required></label>${ts}<button>Save password</button></form>`)));
+  app.post(`${apiBase}/invite/accept`, async (req, res, next) => { try {
+    const b = req.body || {}, ip = ipOf(req);
+    if (!sameOrigin(req)) return res.status(403).json({ error: 'Forbidden' });
+    const badKey = 'ib:' + ip;
+    if ((await peek(badKey, 15 * 60e3)) >= LIMITS.badTokenPerIpPer15m) return res.status(429).json({ error: 'Too many attempts. Try again in 15 minutes.' });
+    const bad = async () => { await bump(badKey, 15 * 60e3); await audit('invite_rejected', null, ip); return res.status(400).json({ error: inviteMsg }); };
+    if (typeof b.website === 'string' && b.website) return bad();
+    if (!(await turnstileOk(turnstileSecret, b.turnstile, ip, fetchImpl))) return res.status(403).json({ error: 'Please complete the human check and try again.' });
+    const pw = typeof b.password === 'string' ? b.password : '';
+    if (pw.length < minPassword || pw.length > 128) return res.status(400).json({ error: `Password must be ${minPassword}-128 characters.` });
+    const token = String(b.token || '');
+    if (!/^[A-Za-z0-9_-]{40,60}$/.test(token)) return bad();
+    const h = sha(token);
+    const row = await db.get('SELECT id, user_id, expires_at, used_at FROM invites WHERE token_hash = ?', [h]);
+    if (!row || row.used_at || row.expires_at <= now()) return bad();
+    const target = users.findById ? await users.findById(row.user_id) : null;
+    if (!target || target.role === 'owner') return bad();
+    const claim = await db.run('UPDATE invites SET used_at = ? WHERE id = ? AND used_at IS NULL', [now(), row.id]);
+    if (!claim || claim.changes !== 1) return bad();
+    await users.setPassword(row.user_id, pw);
+    await users.revokeSessions(row.user_id);
+    await db.run('UPDATE invites SET used_at = ? WHERE user_id = ? AND used_at IS NULL', [now(), row.user_id]);
+    await db.run('UPDATE password_resets SET used_at = ? WHERE user_id = ? AND used_at IS NULL', [now(), row.user_id]);
+    await audit('invite_completed', row.user_id, ip);
+    return res.json({ ok: true });
+  } catch (e) { next(e); } });
+
+  // Called from the owner-only route. Voids older unused invites; returns the link once (owner hands it over).
+  async function createInvite(userId) {
+    const target = users.findById ? await users.findById(userId) : null;
+    if (!target || target.role === 'owner') return null;
+    const t = now(), token = crypto.randomBytes(32).toString('base64url');
+    await db.run('UPDATE invites SET used_at = ? WHERE user_id = ? AND used_at IS NULL', [t, userId]);
+    await db.run('INSERT INTO invites (user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?)', [userId, sha(token), t + INVITE_TTL_MS, t]);
+    await audit('invite_created', userId, null);
+    return { link: `${String(publicOrigin || '').replace(/\/$/, '')}${o.invitePath || '/set-password'}#token=${token}`, expiresAt: t + INVITE_TTL_MS };
+  }
+  return { createInvite, settle: () => Promise.all([...pending]) };
 }

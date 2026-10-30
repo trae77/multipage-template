@@ -21,13 +21,13 @@ class ApiStore {
     if (!r.ok) throw new Error(data.error || `Request failed (${r.status})`);
     return data;
   }
-  async login(email, password) { const d = await this.req('POST', '/auth/login', { email, password }); localStorage.setItem('mp_token', d.token); return d.user; }
+  async login(email, password, extra = {}) { const d = await this.req('POST', '/auth/login', { email, password, ...extra }); localStorage.setItem('mp_token', d.token); return d.user; }
   async logout() { await this.req('POST', '/auth/logout').catch(() => {}); localStorage.removeItem('mp_token'); }
   me() { return this.token ? this.req('GET', '/auth/me').then((d) => d.user).catch(() => null) : Promise.resolve(null); }
   createLead(d) { return this.req('POST', '/leads', d); } listLeads() { return this.req('GET', '/leads'); } updateLead(id, p) { return this.req('PATCH', '/leads/' + id, p); }
   availability(date) { return this.req('GET', '/bookings/availability?date=' + encodeURIComponent(date)); }
   createBooking(d) { return this.req('POST', '/bookings', d); } listBookings() { return this.req('GET', '/bookings'); } updateBooking(id, p) { return this.req('PATCH', '/bookings/' + id, p); }
-  listCustomers() { return this.req('GET', '/customers'); } createCustomer(d) { return this.req('POST', '/customers', d); }
+  listCustomers() { return this.req('GET', '/customers'); } createCustomer(d) { return this.req('POST', '/customers', d); } inviteCustomer(id) { return this.req('POST', `/customers/${encodeURIComponent(id)}/invite`, {}); }
   listQuotes() { return this.req('GET', '/quotes'); } createQuote(d) { return this.req('POST', '/quotes', d); } updateQuote(id, p) { return this.req('PATCH', '/quotes/' + id, p); }
   listInvoices() { return this.req('GET', '/invoices'); } createInvoice(d) { return this.req('POST', '/invoices', d); } updateInvoice(id, p) { return this.req('PATCH', '/invoices/' + id, p); }
   listJobs() { return this.req('GET', '/jobs'); } createJob(d) { return this.req('POST', '/jobs', d); } updateJob(id, p) { return this.req('PATCH', '/jobs/' + id, p); }
@@ -201,7 +201,7 @@ const pages = {
   },
   async login() {
     const form = $('#login-form'); const u = await store.me(); if (u) location.href = ROOT + (u.role === 'owner' ? 'admin/' : 'portal/');
-    form.addEventListener('submit', async (e) => { e.preventDefault(); try { const u = await store.login(form.email.value, form.password.value); location.href = ROOT + (u.role === 'owner' ? 'admin/' : 'portal/'); } catch (err) { setStatus(form, err.message, true); } });
+    form.addEventListener('submit', async (e) => { e.preventDefault(); try { const ts = form.querySelector('[name="cf-turnstile-response"]'); const u = await store.login(form.email.value, form.password.value, { website: form.website ? form.website.value : '', turnstile: ts ? ts.value : '' }); location.href = ROOT + (u.role === 'owner' ? 'admin/' : 'portal/'); } catch (err) { setStatus(form, err.message, true); } });
   },
   portal: () => dashboard('customer'),
   admin: () => dashboard('owner'),
@@ -281,7 +281,8 @@ const OWNER = {
     $('#jf').onsubmit = async (e) => { e.preventDefault(); if (!e.target.title.value.trim()) return setStatus(e.target, 'Title required', true); await store.createJob({ customerId: e.target.customerId.value, title: e.target.title.value.trim() }); r(); };
     p.onsubmit = async (e) => { const id = e.target.dataset.job; if (!id) return; e.preventDefault(); const d = formData(e.target); await store.updateJob(id, { status: d.status, progress: Math.max(0, Math.min(100, Number(d.progress) || 0)), notes: d.notes }); r(); };
     for (const x of j) await photosUI($(`[data-ph="${x.id}"]`, p), x, r); },
-  async customers(p, r) { const c = await store.listCustomers(); p.innerHTML = `<h2 style="margin-top:0">Customers</h2>${table(['Name', 'Email'], c.map((x) => `<tr><td>${esc(x.name)}</td><td>${esc(x.email)}</td></tr>`))}<form class="form card" id="cf" style="margin-top:1rem"><h3>Add a customer login</h3><label for="cf-n">Name</label><input id="cf-n" name="name" required><label for="cf-e">Email</label><input id="cf-e" name="email" type="email" required><label for="cf-p">Temporary password</label><input id="cf-p" name="password" required minlength="8"><button class="btn" type="submit">Create login</button><p class="status" role="status"></p></form>`;
+  async customers(p, r) { const c = await store.listCustomers(); p.innerHTML = `<h2 style="margin-top:0">Customers</h2>${table(['Name', 'Email', ''], c.map((x) => `<tr><td>${esc(x.name)}</td><td>${esc(x.email)}</td><td>${store.inviteCustomer ? `<button class="btn btn-ghost" type="button" data-invite="${esc(x.id)}">Re-send sign-in link</button>` : ''}</td></tr>`))}<p class="status" id="inv-out" role="status"></p><form class="form card" id="cf" style="margin-top:1rem"><h3>Add a customer login</h3><label for="cf-n">Name</label><input id="cf-n" name="name" required><label for="cf-e">Email</label><input id="cf-e" name="email" type="email" required><label for="cf-p">Temporary password</label><input id="cf-p" name="password" required minlength="8"><button class="btn" type="submit">Create login</button><p class="status" role="status"></p></form>`;
+    p.querySelectorAll('[data-invite]').forEach((b) => { b.onclick = async () => { const out = $('#inv-out'); try { const d = await store.inviteCustomer(b.dataset.invite); out.textContent = `Single-use link (valid 48 hours, works once): ${d.link}`; } catch (err) { out.textContent = err.message; } }; });
     $('#cf').onsubmit = async (e) => { e.preventDefault(); try { await store.createCustomer(formData(e.target)); r(); } catch (err) { setStatus(e.target, err.message, true); } }; },
   async messages(p, r) { const c = await store.listCustomers(); const cur = p.dataset.cust && c.some((x) => x.id === p.dataset.cust) ? p.dataset.cust : c[0]?.id;
     p.innerHTML = `<h2 style="margin-top:0">Messages</h2><label for="mc" style="font-weight:600">Customer</label> <select class="field" id="mc" style="max-width:320px">${c.map((x) => `<option value="${x.id}"${x.id === cur ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select>`;

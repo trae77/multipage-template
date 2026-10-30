@@ -6,7 +6,9 @@ import crypto from 'node:crypto';
 
 export const RESET_TTL_MS = 30 * 60 * 1000;
 export const LIMITS = { ipPerMin: 3, ipPerHour: 10, emailPerHour: 3, badTokenPerIpPer15m: 10 };
-export const FORGOT_OK = 'If that email has an account, a reset link is on its way. It expires in 30 minutes.';
+export const FORGOT_OK = 'If that email has an account, a reset link is on its way. It expires in 30 minutes and works once.';
+// Used when no email sender is configured (no RESEND_API_KEY). Same reply for known and unknown emails.
+export const fallbackFor = (who) => `Thanks. Contact ${who} and the owner will re-send you a single-use sign-in link, valid for 48 hours.`;
 export const SCHEMA = `
 CREATE TABLE IF NOT EXISTS password_resets (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, token_hash TEXT NOT NULL UNIQUE, expires_at INTEGER NOT NULL, used_at INTEGER, created_at INTEGER NOT NULL);
 CREATE INDEX IF NOT EXISTS password_resets_user ON password_resets(user_id, created_at);
@@ -21,11 +23,14 @@ export async function turnstileOk(secret, token, ip, fetchImpl = fetch) {
   try { const r = await fetchImpl('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: fd }); return !!(await r.json()).success; } catch { return false; }
 }
 
-// EMAIL_SENDER=resend (RESEND_API_KEY + EMAIL_FROM) or stub (default; logs a redacted line, never the link).
+// Resend sends ONLY when the RESEND_API_KEY secret exists (EMAIL_FROM optional, on a Resend-verified domain).
+// No key: nothing is sent; logs a redacted line, never the link or key.
+export const DEFAULT_FROM = 'Sign-in <no-reply@ttawebdev.com>';
+export const emailConfigured = (env = process.env) => !!env.RESEND_API_KEY;
 export function defaultSender(env = process.env, fetchImpl = fetch, log = console.log) {
   return async ({ to, subject, text }) => {
-    if ((env.EMAIL_SENDER || 'stub') === 'resend' && env.RESEND_API_KEY && env.EMAIL_FROM) {
-      try { const r = await fetchImpl('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: env.EMAIL_FROM, to: [to], subject, text }) }); return { delivered: r.ok, provider: 'resend' }; } catch { return { delivered: false, provider: 'resend' }; }
+    if (emailConfigured(env)) {
+      try { const r = await fetchImpl('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: env.EMAIL_FROM || DEFAULT_FROM, to: [to], subject, text }) }); return { delivered: r.ok, provider: 'resend' }; } catch { return { delivered: false, provider: 'resend' }; }
     }
     log(`[email-stub] reset for ${String(to).replace(/^(.).*(@.*)$/, '$1***$2')} not delivered (no provider configured)`);
     return { delivered: false, provider: 'stub' };
@@ -37,7 +42,11 @@ export function defaultSender(env = process.env, fetchImpl = fetch, log = consol
 export async function mountForgotLogin(app, o) {
   const { db, users, publicOrigin, resetPath = '/reset-password', siteName = 'your account', apiBase = '/api/auth',
     turnstileSecret = process.env.TURNSTILE_SECRET, fetchImpl = fetch, now = () => Date.now(), minPassword = 12 } = o;
-  const send = o.sendEmail || defaultSender(process.env, fetchImpl);
+  const env = o.env || process.env;
+  const send = o.sendEmail || defaultSender(env, fetchImpl);
+  const emailOn = o.emailEnabled ?? (!!o.sendEmail || emailConfigured(env));
+  const replyMsg = emailOn ? FORGOT_OK : (o.fallbackMessage || fallbackFor(siteName));
+  const helpHtml = o.helpHtml || '';
   await db.exec(SCHEMA);
   const ipOf = (req) => req.headers['cf-connecting-ip'] || req.ip || req.socket.remoteAddress || '';
   const audit = (event, uid, ip) => db.run('INSERT INTO auth_audit (event, user_id, ip_hash, created_at) VALUES (?, ?, ?, ?)', [event, uid || null, ip ? sha('ip:' + ip) : null, now()]);
@@ -55,7 +64,7 @@ export async function mountForgotLogin(app, o) {
   const page = (title, body) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc(title)}</title><link rel="stylesheet" href="${apiBase}/forgot-login.css"></head><body><main class="fl"><h1>${esc(title)}</h1>${body}<p id="fl-msg" role="status"></p></main><script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script><script src="${apiBase}/forgot-login.js" defer></script></body></html>`;
   const ts = `<div class="cf-turnstile" data-sitekey="${esc(siteKey)}"></div><input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="fl-hp">`;
   const noStore = (res) => res.set({ 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' });
-  app.get(o.forgotPath || '/forgot-password', (_q, res) => noStore(res).type('html').send(page('Forgot your password?', `<form id="fl-forgot" data-api="${apiBase}/forgot"><label>Email<input type="email" name="email" autocomplete="email" maxlength="254" required></label>${ts}<button>Email me a reset link</button></form>`)));
+  app.get(o.forgotPath || '/forgot-password', (_q, res) => noStore(res).type('html').send(page('Forgot your password?', `<form id="fl-forgot" data-api="${apiBase}/forgot"><label>Email<input type="email" name="email" autocomplete="email" maxlength="254" required></label>${ts}<button>${emailOn ? 'Email me a reset link' : 'Continue'}</button></form>${helpHtml}`)));
   app.get(resetPath, (_q, res) => noStore(res).type('html').send(page('Choose a new password', `<form id="fl-reset" data-api="${apiBase}/reset" data-min="${minPassword}"><label>New password<input type="password" name="password" autocomplete="new-password" minlength="${minPassword}" maxlength="128" required></label><label>Confirm<input type="password" name="confirm" autocomplete="new-password" required></label>${ts}<button>Save password</button><p>Saving signs you out everywhere.</p></form>`)));
   app.get(`${apiBase}/forgot-login.css`, (_q, res) => res.type('css').send('.fl{max-width:28rem;margin:3rem auto;padding:0 1rem;font:16px/1.5 system-ui,sans-serif}.fl label{display:block;margin:.75rem 0}.fl input{display:block;width:100%;box-sizing:border-box;padding:.6rem;font:inherit}.fl button{margin-top:1rem;padding:.7rem 1.2rem;font:inherit}.fl-hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}.cf-turnstile{max-width:100%;overflow:hidden}'));
   app.get(`${apiBase}/forgot-login.js`, (_q, res) => res.type('js').send(`(function(){var m=document.getElementById('fl-msg');function tok(f){var i=f.querySelector('[name="cf-turnstile-response"]');return i?i.value:''}
@@ -68,11 +77,11 @@ post(b,{token:t,password:b.password.value,website:b.website.value,turnstile:tok(
   app.post(`${apiBase}/forgot`, async (req, res, next) => { try {
     const b = req.body || {}, ip = ipOf(req);
     if (!sameOrigin(req)) return res.status(403).json({ error: 'Forbidden' });
-    if (typeof b.website === 'string' && b.website) return res.json({ ok: true, message: FORGOT_OK });
+    if (typeof b.website === 'string' && b.website) return res.json({ ok: true, message: replyMsg });
     if ((await bump('fm:' + ip, 60e3)) > LIMITS.ipPerMin || (await bump('fh:' + ip, 3600e3)) > LIMITS.ipPerHour) return res.status(429).json({ error: 'Too many requests. Please wait a minute.' });
     if (!(await turnstileOk(turnstileSecret, b.turnstile, ip, fetchImpl))) return res.status(403).json({ error: 'Please complete the human check and try again.' });
     const email = typeof b.email === 'string' ? b.email.trim().toLowerCase().slice(0, 254) : '';
-    const ok = () => res.json({ ok: true, message: FORGOT_OK });
+    const ok = () => res.json({ ok: true, message: replyMsg });
     const token = crypto.randomBytes(32).toString('base64url'), h = sha(token);
     const u = email ? await users.findByEmail(email) : null;
     if (!u) { if (email) await audit('reset_unknown_email', null, ip); return ok(); }

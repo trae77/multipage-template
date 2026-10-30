@@ -69,3 +69,21 @@ test('pages served with strict CSP (no inline script)', async () => {
     for (const tag of html.match(/<script\b[^>]*>[\s\S]*?<\/script>/g)) assert.match(tag, /\ssrc="/);
   }
 });
+
+test('no RESEND_API_KEY: identical owner re-invite reply, nothing sent; with key: Resend called', async () => {
+  const { fallbackFor, defaultSender } = await import('../server/forgot-login.js');
+  delete process.env.RESEND_API_KEY;
+  const d2 = fs.mkdtempSync(path.join(os.tmpdir(), 'mp-forgot2-'));
+  const app = await createApp({ dataDir: d2, config: { business: { name: 'Test Co' }, booking: {} }, ownerEmail: 'owner@test.dev', ownerPassword: 'owner-pass-1', noRateLimit: true, staticDir: path.join(d2, 'none'), fetchImpl, turnstileSecret: 'test-only' });
+  const s = await new Promise((r) => { const x = app.listen(0, () => r(x)); }); const b2 = `http://127.0.0.1:${s.address().port}`;
+  const ask = async (email) => (await fetch(b2 + '/api/auth/forgot', { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': `10.9.0.${++ip}` }, body: JSON.stringify({ email, turnstile: 't' }) })).json();
+  const a = await ask('owner@test.dev'), b = await ask('nobody@test.dev');
+  const page = await (await fetch(b2 + '/forgot-password')).text();
+  s.close(); fs.rmSync(d2, { recursive: true, force: true });
+  assert.deepEqual(a, b); assert.equal(a.message, fallbackFor('Test Co')); assert.match(a.message, /single-use sign-in link, valid for 48 hours/);
+  assert.doesNotMatch(page, /Email me a reset link/);
+  const calls = []; const f = async (u, o) => { calls.push([u, JSON.parse(o.body)]); return new Response('{}'); };
+  assert.deepEqual(await defaultSender({}, f, () => {})({ to: 'a@b.c', subject: 's', text: 't' }), { delivered: false, provider: 'stub' }); assert.equal(calls.length, 0);
+  assert.deepEqual(await defaultSender({ RESEND_API_KEY: 'test-not-a-key' }, f, () => {})({ to: 'a@b.c', subject: 's', text: 't' }), { delivered: true, provider: 'resend' });
+  assert.equal(calls[0][0], 'https://api.resend.com/emails'); assert.deepEqual(calls[0][1].to, ['a@b.c']);
+});

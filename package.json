@@ -9,7 +9,7 @@
     "start": "node server/index.js",
     "dev": "npm run build && OWNER_EMAIL=owner@demo.test OWNER_PASSWORD=demo-owner SEED_DEMO_DATA=true DATA_DIR=./data node server/index.js",
     "presets": "node tools/make-presets.mjs",
-    "test": "node --test tests/api.test.js",
+    "test": "node --test tests/api.test.js tests/forgot.test.js",
     "test:e2e": "npm run build:demo && npm run audit:industry && node tests/smoke.mjs && node tests/a11y.mjs",
     "screenshots": "npm run build:demo && node tests/screenshots.mjs",
     "audit:industry": "node tools/audit-industry.mjs",

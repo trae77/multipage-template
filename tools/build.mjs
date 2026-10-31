@@ -13,6 +13,7 @@ const ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..'
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : d; };
 const DEMO = args.includes('--demo');
+const TS_SITE_KEY = process.env.TURNSTILE_SITE_KEY || '';
 const readJson = (p) => JSON.parse(fs.readFileSync(path.resolve(ROOT, p), 'utf8'));
 const cfg = readJson(opt('config', 'site.config.json'));
 // Optional lead-responder hook (lead-responder/README.md). Empty by default = no change to the site.
@@ -99,7 +100,8 @@ const css = fs.readFileSync(path.join(ROOT, 'src/public/base.css'), 'utf8') + '\
 // ---- pages ----
 const TOP = [ACTION === 'order' && ['menu/', 'Menu'], ['services/', 'Services'], F.gallery !== false && ['gallery/', 'Gallery'], F.reviews !== false && ['reviews/', 'Reviews'], ['about/', 'About'], F.blog !== false && ['blog/', 'Blog'], ['contact/', 'Contact']].filter(Boolean).slice(0, 6);
 const MORE = [F.faq !== false && ['faq/', 'FAQ'], F.serviceArea !== false && ['service-area/', 'Service Area'], F.booking !== false && ACTION !== 'book' && ['book/', 'Book a visit'], ACTION === 'schedule' && ['schedule/', 'Schedule'], ACTION === 'listings' && ['listings/', 'Listings'], ACTION === 'packages' && ['packages/', 'Packages'], ACTION === 'order' && ['order/', 'Order pickup'], ACTION === 'quote' && ['quote/', 'Quote builder'], MEDICAL && B.patientPortalUrl && [B.patientPortalUrl, 'Patient portal']].filter(Boolean);
-const NAV = [['', 'Home'], ...TOP, ...MORE, ...((F.portal !== false || F.admin !== false) ? [['login/', 'Log in']] : [])];
+// Hidden logins (QA L5): no login link in nav/header/home. Owner and customers get the direct /login/ link at handoff.
+const NAV = [['', 'Home'], ...TOP, ...MORE];
 const hrefOf = (pre, h) => (/^https?:/.test(h) ? h : pre + h);
 const tel = 'tel:' + (B.phone || '').replace(/[^\d+]/g, ''); const sms = 'sms:' + (B.textPhone || B.phone || '').replace(/[^\d+]/g, '');
 const sitemap = [];
@@ -123,7 +125,7 @@ const jsonLd = () => JSON.stringify({ '@context': 'https://schema.org', '@type':
   makesOffer: services.map((s) => ({ '@type': 'Offer', itemOffered: { '@type': 'Service', name: s.name } })) }).replace(/</g, '\\u003c');
 const analytics = () => { const a = cfg.analytics || {}; if (DEMO || !a.id) return '';
   if (a.provider === 'plausible') return `<script defer data-domain="${esc(a.id)}" src="https://plausible.io/js/script.js"></script>`;
-  if (a.provider === 'ga4') return `<script async src="https://www.googletagmanager.com/gtag/js?id=${esc(a.id)}"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config',${JSON.stringify(a.id)});</script>`;
+  if (a.provider === 'ga4') return `<script async src="https://www.googletagmanager.com/gtag/js?id=${esc(a.id)}"></script><script src="/assets/ga-init.js" data-ga="${esc(a.id)}"></script>`;
   return ''; };
 
 function page(rel, { title, description, page: pageId = '', body, noindex = false }) {
@@ -152,7 +154,7 @@ ${analytics()}
 ${DEMO ? '<div class="demo-banner" role="note">Demo mode, sample data. Nothing here is a real business, customer or review.</div>' : ''}
 <header class="site-header"><div class="wrap"><a class="logo" href="${pre}">${esc(B.name)}</a>
 <nav class="nav-desktop" aria-label="Main">${TOP.map(link).join('')}</nav>
-<div class="hdr-actions"><a class="hdr-phone" href="${tel}">${esc(B.phone)}</a>${login ? `<a class="hdr-login" href="${pre}login/">Log in</a>` : ''}<a class="btn hdr-cta" href="${cta}">${esc(ACTION_LABEL)}</a>
+<div class="hdr-actions"><a class="hdr-phone" href="${tel}">${esc(B.phone)}</a><a class="btn hdr-cta" href="${cta}">${esc(ACTION_LABEL)}</a>
 <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-sheet"><span class="menu-icon" aria-hidden="true"></span>Menu</button></div></div>
 <nav class="nav-priority" aria-label="Main links">${[[`${ACTION}/`, ACTION_LABEL], ...TOP.filter(([h]) => h !== `${ACTION}/`).slice(0, 2)].map(link).join('')}</nav></header>
 <div id="menu-sheet" class="menu-sheet" role="dialog" aria-modal="true" aria-label="Site menu" hidden><div class="menu-sheet-inner">
@@ -170,8 +172,9 @@ ${body(pre)}
 <div><strong>Service areas</strong><br>${(B.serviceAreas || []).map(esc).join('<br>')}${B.hours ? `<br><br><strong>Hours</strong><br>${esc(B.hours)}` : ''}${B.license ? `<br><br>${esc(B.license)}` : ''}</div>
 </div></footer>
 ${F.callBar !== false ? `<nav class="call-bar" aria-label="Quick actions"><a class="cb-alt" href="${tel}">Call</a><a class="cb-alt" href="${sms}">Text</a><a class="cb-call" href="${cta}">${esc(ACTION_LABEL)}</a></nav>` : ''}
-<script>window.SITE=${JSON.stringify({ mode: DEMO ? 'demo' : 'api', name: B.name, phone: B.phone, email: B.email, booking: cfg.booking, payLink: /^https:\/\/(buy|checkout)\.stripe\.com\//.test(cfg.payments?.stripePaymentLink || '') ? cfg.payments.stripePaymentLink : '', features: F, trade: tradeKey, action: ACTION, ordering: { squareUrl: /^https:\/\//.test(cfg.ordering?.squareUrl || '') ? cfg.ordering.squareUrl : '' }, services: services.map((s) => s.name), ...(LEAD_WEBHOOK ? { leadWebhook: LEAD_WEBHOOK } : {}) }).replace(/</g, '\\u003c')};</script>
-${DEMO ? `<script>window.SEED=${JSON.stringify(content).replace(/</g, '\\u003c')};</script>` : ''}
+<script type="application/json" id="site-data">${JSON.stringify({ mode: DEMO ? 'demo' : 'api', name: B.name, phone: B.phone, email: B.email, booking: cfg.booking, payLink: /^https:\/\/(buy|checkout)\.stripe\.com\//.test(cfg.payments?.stripePaymentLink || '') ? cfg.payments.stripePaymentLink : '', features: F, trade: tradeKey, action: ACTION, ordering: { squareUrl: /^https:\/\//.test(cfg.ordering?.squareUrl || '') ? cfg.ordering.squareUrl : '' }, services: services.map((s) => s.name), ...(LEAD_WEBHOOK ? { leadWebhook: LEAD_WEBHOOK } : {}) }).replace(/</g, '\\u003c')}</script>
+${DEMO ? `<script type="application/json" id="seed-data">${JSON.stringify(content).replace(/</g, '\\u003c')}</script>` : ''}
+${!DEMO && pageId === 'login' ? '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>' : ''}
 <script type="module" src="${pre}assets/app.js"></script>
 </body></html>`;
   // SMS consent box (never pre-checked) only when a lead webhook is configured.
@@ -183,6 +186,7 @@ ${DEMO ? `<script>window.SEED=${JSON.stringify(content).replace(/</g, '\\u003c')
 
 fs.rmSync(OUT, { recursive: true, force: true }); fs.mkdirSync(path.join(OUT, 'assets'), { recursive: true });
 fs.writeFileSync(path.join(OUT, 'assets/site.css'), css + (HOME ? HERO_CSS + `:root{--hero-text:${onColor(mix(primary, '#000000', 0.2))}}` : ''));
+fs.writeFileSync(path.join(OUT, 'assets/ga-init.js'), "(function(){var s=document.currentScript;window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}window.gtag=gtag;gtag('js',new Date());gtag('config',s.dataset.ga);})();\n");
 for (const f of ['app.js', 'md.js', 'slots.js']) fs.copyFileSync(path.join(ROOT, 'src/public', f), path.join(OUT, 'assets', f));
 if (DEMO) fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
 const label = trade.label;
@@ -195,7 +199,7 @@ page('', { title: 'Home', page: 'home', description: `${B.name}: ${label}${cityL
 <section><div class="wrap">${head('Services', 'What we do.')}<div class="grid">${services.map((s) => `<article class="card"><h3>${esc(s.name)}</h3><p>${esc(s.summary)}</p><a class="more" href="${pre}services/${s.slug}/">Learn about ${esc(s.name)}</a></article>`).join('')}</div></div></section>
 ${F.gallery !== false ? `<section><div class="wrap">${head('Recent projects', 'Drag the slider to compare before and after.')}<div class="grid" data-list="projects" data-limit="3">${content.projects.slice(0, 3).map(projectCard).join('')}</div><p><a class="btn btn-secondary" href="${pre}gallery/">See the gallery</a></p></div></section>` : ''}
 ${F.reviews !== false && content.reviews.length ? `<section><div class="wrap">${head('Reviews')}<div class="grid">${content.reviews.slice(0, 3).map(reviewCard).join('')}</div></div></section>` : ''}
-<section><div class="wrap">${head('Ready to start?', 'Tell us about the job and we will get back to you.')}<div class="btn-row"><a class="btn" href="${pre}contact/">Request a quote</a>${F.portal !== false ? `<a class="btn btn-secondary" href="${pre}login/">Customer login</a>` : ''}</div></div></section>` });
+<section><div class="wrap">${head('Ready to start?', 'Tell us about the job and we will get back to you.')}<div class="btn-row"><a class="btn" href="${pre}contact/">Request a quote</a></div></div></section>` });
 
 page('services/', { title: 'Services', page: 'services', description: `${label} services from ${B.name}: ${services.map((s) => s.name).join(', ')}.`, body: (pre) => `
 <section class="page-hero"><div class="wrap"><h1>Services</h1><p>${esc(B.name)} services${esc(cityLine)}.</p></div></section>
@@ -295,8 +299,8 @@ if (ACTION === 'listings') {
   for (const x of L) page(`listings/${x.id}/`, { title: x.title, page: 'listing', description: `${x.title}, ${x.area}.`, body: (pre) => `<section class="page-hero"><div class="wrap"><p><a href="${pre}listings/">Listings</a></p>${sampleTag(x)}<h1>${esc(x.title)}</h1><p>${esc(x.area)} · ${esc(x.beds)} bed · ${esc(x.baths)} bath</p></div></section><section><div class="wrap prose">${tile('Sample listing photo')}<p>${esc(x.summary)}</p><p><strong>Price:</strong> ask the agent.</p><div class="btn-row"><a class="btn" href="${pre}contact/?service=${encodeURIComponent('Showing: ' + x.title)}">Request a showing</a></div></div></section>` });
 }
 if (ACTION === 'packages') page('packages/', { title: 'Packages', page: 'packages', description: `Packages from ${B.name}.`, body: (pre) => `<section class="page-hero"><div class="wrap"><h1>Packages</h1><p>Ask for pricing and open dates.</p></div></section><section><div class="wrap grid">${(content.packages || []).map((k) => `<article class="card">${sampleTag(k)}<h2 style="font-size:1.3rem;margin-top:0">${esc(k.name)}</h2><ul>${k.includes.map((i) => `<li>${esc(i)}</li>`).join('')}</ul><a class="btn" href="${pre}contact/?service=${encodeURIComponent(k.name)}">Ask about ${esc(k.name)}</a></article>`).join('')}</div></section>` });
-page('login/', { title: 'Log in', page: 'login', noindex: true, description: `Customer and owner login for ${B.name}.`, body: () => `<section class="page-hero"><div class="wrap"><h1>Log in</h1><p>Customers can see quotes, invoices, project status, photos and messages.</p></div></section>
-<section><div class="wrap grid"><form class="form card" id="login-form" novalidate><label for="li-email">Email</label><input id="li-email" name="email" type="email" autocomplete="username" required><label for="li-pass">Password</label><input id="li-pass" name="password" type="password" autocomplete="current-password" required><button class="btn" type="submit">Log in</button>${formStatus}</form>
+page('login/', { title: 'Log in', page: 'login', noindex: true, description: `Customer and owner login for ${B.name}.`, body: (pre) => `<section class="page-hero"><div class="wrap"><h1>Log in</h1><p>Customers can see quotes, invoices, project status, photos and messages.</p></div></section>
+<section><div class="wrap grid"><form class="form card" id="login-form" novalidate><label for="li-email">Email</label><input id="li-email" name="email" type="email" autocomplete="username" required><label for="li-pass">Password</label><input id="li-pass" name="password" type="password" autocomplete="current-password" required><input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="hp-field">${DEMO ? '' : `<div class="cf-turnstile" data-sitekey="${esc(TS_SITE_KEY)}"></div>`}<button class="btn" type="submit">Log in</button>${formStatus}${DEMO ? '' : `<p class="small"><a href="${pre}forgot-password">Forgot your password?</a></p>`}</form>
 ${DEMO ? `<div class="demo-logins" aria-label="Demo logins"><h2 style="margin-top:0;font-size:1.2rem">Demo logins (sample data)</h2><p><strong>Owner:</strong> <code>owner@demo.test</code> / <code>demo-owner</code></p><p><strong>Customer:</strong> <code>customer@demo.test</code> / <code>demo-customer</code></p><p class="hint" style="color:#44403c">Data is stored in this browser only. Use “Reset demo data” in the dashboard to start over.</p></div>` : ''}</div></section>` });
 if (MEDICAL) page('portal/', { title: 'Patient portal', page: 'medical-portal', noindex: true, description: 'Patient portal', body: () => `<section class="page-hero"><div class="wrap"><h1>Patient portal</h1><p>For your privacy, health records and forms are handled in the practice's own patient portal, not on this website.</p>${B.patientPortalUrl ? `<p><a class="btn" href="${esc(B.patientPortalUrl)}" rel="noopener">Open the patient portal</a></p>` : '<p class="hint">Owner: set business.patientPortalUrl in site.config.json.</p>'}</div></section>` });
 else page('portal/', { title: 'Customer portal', page: 'portal', noindex: true, description: 'Customer portal', body: () => `<section class="page-hero"><div class="wrap"><h1>My account</h1><p id="who"></p></div></section><section><div class="wrap" id="app" aria-live="polite"></div></section>` });

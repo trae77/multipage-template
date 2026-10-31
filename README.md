@@ -171,7 +171,7 @@ Blog (posts from `content/*.json`, plus dashboard posts) · Contact/Quote form �
 
 1. Push this folder to a **private** GitHub repo.
 2. Render → New → Blueprint → pick the repo. `render.yaml` creates one Node web service ($7/mo plan) with a 1 GB disk at `/var/data` (`DATA_DIR`).
-3. In the Render dashboard set `OWNER_EMAIL` and `OWNER_PASSWORD` (and optional notification vars, see `.env.example`). Set `siteUrl` in `site.config.json` to the final domain.
+3. In the Render dashboard set `OWNER_EMAIL` and `OWNER_PASSWORD` (seed only), plus `OWNER_EMAILS`, `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` — the owner can only sign in through Cloudflare Access with an email in `OWNER_EMAILS` (fails closed if unset) — and `TURNSTILE_SECRET`/`TURNSTILE_SITE_KEY` (login, forgot, reset and invite fail closed without them). Logins are not linked anywhere on the site; send owners/customers the direct `/login/` link at handoff. Re-invite a customer from the owner API `POST /api/customers/:id/invite` (single-use, 48h) (and optional notification vars, see `.env.example`). Set `siteUrl` in `site.config.json` to the final domain.
 4. Custom domain: add it in Render, then CNAME the root and `www` to `<service>.onrender.com` at your DNS host.
 5. Log in at `/login/` as the owner, create customer logins under **Customers**.
 

@@ -18,7 +18,7 @@ let owner, cust, cust2, custId, cust2Id;
 
 before(async () => {
   hooks.push((e, d) => events.push(e));
-  const app = await createApp({ dataDir: dir, config, ownerEmail: 'owner@test.dev', ownerPassword: 'owner-pass-1', now: () => NOW, noRateLimit: true, staticDir: path.join(dir, 'none') });
+  const app = await createApp({ dataDir: dir, config, ownerEmail: 'owner@test.dev', ownerPassword: 'owner-pass-1', now: () => NOW, noRateLimit: true, staticDir: path.join(dir, 'none'), loginTurnstile: false, verifyOwnerAccess: async () => 'owner@test.dev' });
   await new Promise((r) => { server = app.listen(0, r); }); base = `http://127.0.0.1:${server.address().port}`;
   owner = await login('owner@test.dev', 'owner-pass-1');
   custId = (await call('POST', '/api/customers', { token: owner, body: { name: 'Cust One', email: 'one@test.dev', password: 'password-1' } })).body.id;

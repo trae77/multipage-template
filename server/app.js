@@ -3,7 +3,17 @@ import express from 'express'; import multer from 'multer'; import bcrypt from '
 import crypto from 'node:crypto'; import fs from 'node:fs'; import path from 'node:path'; import url from 'node:url';
 import { openDb, SCHEMA } from './db.js'; import { notify, notifyStatus } from './notify.js';
 import { slotsFor } from '../src/public/slots.js';
+import { mountForgotLogin, turnstileOk } from './forgot-login.js';
+import { makeAccessVerifier } from './owner-access.js';
 const ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
+
+// Strict CSP: no inline script; Turnstile is the only third-party script/frame. Add map/booking origins per client in site config.
+export const CSP = "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com https://www.google.com; form-action 'self'; frame-ancestors 'self'; base-uri 'self'; object-src 'none'";
+
+export function cspFor(config = {}) {
+  const a = config.analytics || {}; const extra = a.provider === 'plausible' ? ' https://plausible.io' : a.provider === 'ga4' ? ' https://www.googletagmanager.com https://www.google-analytics.com' : '';
+  return CSP.replace("script-src 'self'", "script-src 'self'" + (a.id ? extra : '')).replace("connect-src 'self'", "connect-src 'self'" + (a.id ? extra : ''));
+}
 
 export async function createApp(opts = {}) {
   const dataDir = path.resolve(opts.dataDir || process.env.DATA_DIR || path.join(ROOT, 'data'));
@@ -19,7 +29,9 @@ export async function createApp(opts = {}) {
   if (ownerEmail && ownerPass) {
     const ex = await db.get('SELECT id FROM users WHERE email=?', [ownerEmail]);
     const hash = bcrypt.hashSync(ownerPass, 10);
-    if (ex) await db.run('UPDATE users SET password_hash=?, role=? WHERE id=?', [hash, 'owner', ex.id]);
+    // Env seeds the owner once; a later forgot-password reset must survive restarts (set OWNER_PASSWORD_FORCE=1 to re-apply env).
+    if (ex && (opts.ownerPasswordForce ?? process.env.OWNER_PASSWORD_FORCE === '1')) await db.run('UPDATE users SET password_hash=?, role=? WHERE id=?', [hash, 'owner', ex.id]);
+    else if (ex) await db.run('UPDATE users SET role=? WHERE id=?', ['owner', ex.id]);
     else await db.run('INSERT INTO users(role,name,email,password_hash) VALUES(?,?,?,?)', ['owner', config.business?.name || 'Owner', ownerEmail, hash]);
   }
   if (opts.seedDemo ?? process.env.SEED_DEMO_DATA === 'true') {
@@ -28,23 +40,40 @@ export async function createApp(opts = {}) {
     for (const k of ['projects', 'posts']) await db.run('INSERT OR IGNORE INTO content(key,value) VALUES(?,?)', [k, JSON.stringify(c[k])]);
   }
 
+  // Owner = Cloudflare Access + OWNER_EMAILS (QA L3). OWNER_EMAIL/OWNER_PASSWORD only seed the account row; the
+  // password alone never grants owner. Tests inject opts.verifyOwnerAccess.
+  const verifyOwnerAccess = opts.verifyOwnerAccess || makeAccessVerifier({ teamDomain: process.env.ACCESS_TEAM_DOMAIN, aud: process.env.ACCESS_AUD, ownerEmails: process.env.OWNER_EMAILS || process.env.OWNER_EMAIL, fetchImpl: opts.fetchImpl || fetch });
+  const loginTurnstileSecret = opts.turnstileSecret ?? process.env.TURNSTILE_SECRET;
+  const loginTurnstile = opts.loginTurnstile ?? true; // fail closed; tests may pass false
+  const ownerOk = async (req, u) => { const e = await verifyOwnerAccess(req); return !!e && e === String(u.email).toLowerCase(); };
+
   const app = express();
+  app.locals.settleForgot = () => (fl ? fl.settle() : Promise.resolve());
   app.disable('x-powered-by');
   app.use(express.json({ limit: '200kb' }));
-  app.use((req, res, next) => { res.set({ 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'X-Frame-Options': 'SAMEORIGIN' }); next(); });
+  app.use((req, res, next) => { res.set({ 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'X-Frame-Options': 'SAMEORIGIN', 'Content-Security-Policy': cspFor(config) }); next(); });
+  const fl = await mountForgotLogin(app, { db, publicOrigin: opts.publicOrigin ?? process.env.PUBLIC_ORIGIN ?? config.siteUrl, siteName: config.business?.name || 'your account', fetchImpl: opts.fetchImpl || fetch, turnstileSecret: opts.turnstileSecret ?? process.env.TURNSTILE_SECRET, sendEmail: opts.sendEmail, now: opts.nowMs,
+    users: { findByEmail: (e) => db.get("SELECT id, email FROM users WHERE email=? AND role != 'owner'", [e]), findById: (id) => db.get("SELECT id, email, role FROM users WHERE id=?", [id]), setPassword: (id, pw) => db.run('UPDATE users SET password_hash=? WHERE id=?', [bcrypt.hashSync(pw, 10), id]), revokeSessions: (id) => db.run('DELETE FROM sessions WHERE user_id=?', [id]) } });
   const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
   const bad = (res, code, error) => res.status(code).json({ error });
   const str = (v, max = 2000) => String(v ?? '').trim().slice(0, max);
 
   // tiny in-memory rate limiter for public endpoints
+  // In-memory counters are size-capped (oldest-touched evicted first) so a flood of keys can't exhaust memory (QA r3 P3).
+  const MAP_CAP = opts.mapCap || 10000;
+  const capSet = (m, k, v) => { m.delete(k); m.set(k, v); while (m.size > MAP_CAP) m.delete(m.keys().next().value); };
+  // Client IP: Cloudflare's CF-Connecting-IP, else the socket address (never X-Forwarded-For, which is client-set).
+  const clientIp = (req) => String(req.headers['cf-connecting-ip'] || req.socket?.remoteAddress || '').slice(0, 64);
+  app.locals.counterSizes = () => ({ hits: hits.size, fails: fails.size, acctFails: acctFails.size });
   const hits = new Map();
-  const limit = (n, ms) => (req, res, next) => { if (opts.noRateLimit) return next(); const k = req.ip + req.path; const t = Date.now(); const a = (hits.get(k) || []).filter((x) => t - x < ms); a.push(t); hits.set(k, a); a.length > n ? bad(res, 429, 'Too many requests, try again later') : next(); };
+  const limit = (n, ms) => (req, res, next) => { if (opts.noRateLimit) return next(); const k = clientIp(req) + '|' + req.path; const t = Date.now(); const a = (hits.get(k) || []).filter((x) => t - x < ms); a.push(t); capSet(hits, k, a); a.length > n ? bad(res, 429, 'Too many requests, try again later') : next(); };
 
   // --- auth ---
   const auth = (role) => wrap(async (req, res, next) => {
     const tok = (req.get('authorization') || '').replace(/^Bearer /, '');
     const row = tok && await db.get("SELECT u.* FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token=? AND s.expires > datetime('now')", [tok]);
     if (!row) return bad(res, 401, 'Please log in');
+    if (row.role === 'owner' && !(await ownerOk(req, row))) return bad(res, 403, 'Owner access requires Cloudflare Access');
     if (role && row.role !== role) return bad(res, 403, 'Not allowed');
     req.user = row; req.token = tok; next();
   });
@@ -53,9 +82,35 @@ export async function createApp(opts = {}) {
   const scope = (req) => (req.user.role === 'owner' ? ['1=1', []] : ['customer_id=?', [req.user.id]]);
 
   app.get('/api/health', (_req, res) => res.json({ ok: true, notifications: notifyStatus() }));
+  // Login: honeypot, Turnstile (fail closed), per-IP limit, per-account+IP lockout (5 bad tries -> 15 min),
+  // constant-ish work for unknown emails (dummy bcrypt compare), owner needs Access + OWNER_EMAILS.
+  const DUMMY_HASH = bcrypt.hashSync(crypto.randomBytes(16).toString('hex'), 10);
+  const fails = new Map(); const LOCK_N = 5, LOCK_MS = 15 * 60e3;
+  // Per-account lockout across all IPs (QA r2 P3): rotating IPs can't bypass it. Higher threshold so one IP can't
+  // trivially lock a real user out; Turnstile still applies on every try.
+  const acctFails = new Map(); const ACCT_LOCK_N = opts.acctLockN || 10;
   app.post('/api/auth/login', limit(10, 60000), wrap(async (req, res) => {
-    const u = await db.get('SELECT * FROM users WHERE email=?', [str(req.body.email, 200).toLowerCase()]);
-    if (!u || !bcrypt.compareSync(String(req.body.password || ''), u.password_hash)) return bad(res, 401, 'Wrong email or password');
+    const ip = clientIp(req);
+    if (typeof req.body.website === 'string' && req.body.website) return bad(res, 401, 'Wrong email or password');
+    if (loginTurnstile && !(await turnstileOk(loginTurnstileSecret, req.body.turnstile, ip, opts.fetchImpl || fetch))) return bad(res, 403, 'Please complete the human check and try again.');
+    const email = str(req.body.email, 200).toLowerCase();
+    const lk = crypto.createHash('sha256').update(email + '|' + ip).digest('hex'); const t = Date.now();
+    const f = (fails.get(lk) || []).filter((x) => t - x < LOCK_MS);
+    const ak = crypto.createHash('sha256').update('acct|' + email).digest('hex');
+    const af = (acctFails.get(ak) || []).filter((x) => t - x < LOCK_MS);
+    // Access is checked first (QA r3 P2b): an Access-verified owner signing in as themself is never locked out by
+    // attackers spraying their email; every lock decision is logged (hashed key only, no email/IP).
+    const accessEmail = await verifyOwnerAccess(req);
+    const ownerViaAccess = !!accessEmail && accessEmail === email;
+    if (f.length >= LOCK_N || af.length >= ACCT_LOCK_N) {
+      if (ownerViaAccess) console.warn('[login] lockout bypassed for Access-verified owner', ak.slice(0, 12));
+      else { console.warn('[login] lockout triggered', ak.slice(0, 12), f.length >= LOCK_N ? 'email+ip' : 'account'); return bad(res, 429, 'Too many attempts. Try again in 15 minutes.'); }
+    }
+    const u = await db.get('SELECT * FROM users WHERE email=?', [email]);
+    const pwOk = bcrypt.compareSync(String(req.body.password || ''), u ? u.password_hash : DUMMY_HASH);
+    if (!u || !pwOk) { f.push(t); capSet(fails, lk, f); af.push(t); capSet(acctFails, ak, af); return bad(res, 401, 'Wrong email or password'); }
+    if (u.role === 'owner' && !(ownerViaAccess && accessEmail === String(u.email).toLowerCase())) return bad(res, 403, 'Owner sign-in is only available through Cloudflare Access.');
+    fails.delete(lk); acctFails.delete(ak);
     const token = crypto.randomBytes(32).toString('hex');
     await db.run("INSERT INTO sessions(token,user_id,expires) VALUES(?,?,datetime('now','+14 days'))", [token, u.id]);
     res.json({ token, user: pubUser(u) });
@@ -71,6 +126,13 @@ export async function createApp(opts = {}) {
     if (await db.get('SELECT id FROM users WHERE email=?', [email])) return bad(res, 409, 'Email already used');
     const r = await db.run('INSERT INTO users(role,name,email,phone,password_hash) VALUES(?,?,?,?,?)', ['customer', name, email, str(req.body.phone, 40), bcrypt.hashSync(pw, 10)]);
     res.status(201).json({ id: String(r.id), role: 'customer', name, email });
+  }));
+
+  // Owner re-invite: single-use 48h set-password link for a customer (owner accounts can't be invited).
+  app.post('/api/customers/:id/invite', auth('owner'), wrap(async (req, res) => {
+    const r = await fl.createInvite(Number(req.params.id));
+    if (!r) return bad(res, 404, 'Customer not found');
+    res.set('Cache-Control', 'no-store').json({ link: r.link, expiresAt: new Date(r.expiresAt).toISOString() });
   }));
 
   // --- leads ---
@@ -197,9 +259,36 @@ export async function createApp(opts = {}) {
     await db.run('INSERT INTO content(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [req.params.key, JSON.stringify(v)]); res.json({ ok: true });
   }));
 
-  // --- static site (built by `npm run build`) ---
+  // Owner UI shell (/admin/) is served ONLY by this handler, behind Cloudflare Access + OWNER_EMAILS (QA r2 B2, r3 P2a).
+  // The public static handler never sees dist/admin: paths are decoded (repeatedly), backslashes/duplicate slashes
+  // collapsed and dot-segments resolved before matching, so //admin/, /%61dmin/, /%2Fadmin/, /admin%2findex.html and
+  // /./admin/ all route here. No Access -> plain 404, no-store.
   const dist = opts.staticDir || path.join(ROOT, 'dist');
-  if (fs.existsSync(dist)) app.use(express.static(dist, { extensions: ['html'], maxAge: '1h' }));
+  const adminDir = path.join(dist, 'admin');
+  const normPath = (raw) => {
+    let p = String(raw || '/').split('?')[0];
+    for (let i = 0; i < 5; i++) { let d; try { d = decodeURIComponent(p); } catch { return null; } if (d === p) break; p = d; }
+    p = p.replace(/\0/g, '').replace(/;[^/]*/g, '').replace(/\\/g, '/').replace(/\/{2,}/g, '/');
+    return path.posix.normalize('/' + p).toLowerCase();
+  };
+  const isAdmin = (n) => n === null || n === '/admin' || n.startsWith('/admin/') || n === '/admin.html' || n.startsWith('/admin.');
+  const notFound = (res) => res.set('Cache-Control', 'no-store').status(404).type('text').send('Not found');
+  app.use(wrap(async (req, res, next) => {
+    const n = normPath(req.originalUrl || req.url);
+    if (!isAdmin(n)) return next();
+    if (n === null) return res.set('Cache-Control', 'no-store').status(400).type('text').send('Bad request');
+    if (!(await verifyOwnerAccess(req))) return notFound(res);
+    let rel = n === '/admin' || n === '/admin.html' ? 'index.html' : n.slice('/admin/'.length) || 'index.html';
+    if (rel.endsWith('/')) rel += 'index.html';
+    const file = path.resolve(adminDir, rel), file2 = file + '.html';
+    if (!file.startsWith(adminDir + path.sep)) return notFound(res);
+    const pick = [file, file2, path.join(file, 'index.html')].find((f) => f.startsWith(adminDir + path.sep) && fs.existsSync(f) && fs.statSync(f).isFile());
+    if (!pick) return notFound(res);
+    res.set('Cache-Control', 'no-store'); res.sendFile(pick);
+  }));
+
+  // --- static site (built by `npm run build`) --- (admin/ excluded above; also refused here as a backstop)
+  if (fs.existsSync(dist)) app.use((req, res, next) => (isAdmin(normPath(req.originalUrl || req.url)) ? notFound(res) : next()), express.static(dist, { extensions: ['html'], maxAge: '1h' }));
   app.use('/api', (_req, res) => bad(res, 404, 'Not found'));
   app.use((err, _req, res, _next) => { const code = err.status || (err.code === 'LIMIT_FILE_SIZE' ? 413 : 500); if (code === 500) console.error(err); bad(res, code, code === 500 ? 'Server error' : err.message); });
   app.locals.db = db;

@@ -80,6 +80,9 @@ export async function createApp(opts = {}) {
   // constant-ish work for unknown emails (dummy bcrypt compare), owner needs Access + OWNER_EMAILS.
   const DUMMY_HASH = bcrypt.hashSync(crypto.randomBytes(16).toString('hex'), 10);
   const fails = new Map(); const LOCK_N = 5, LOCK_MS = 15 * 60e3;
+  // Per-account lockout across all IPs (QA r2 P3): rotating IPs can't bypass it. Higher threshold so one IP can't
+  // trivially lock a real user out; Turnstile still applies on every try.
+  const acctFails = new Map(); const ACCT_LOCK_N = opts.acctLockN || 10;
   app.post('/api/auth/login', limit(10, 60000), wrap(async (req, res) => {
     const ip = req.headers['cf-connecting-ip'] || req.ip || '';
     if (typeof req.body.website === 'string' && req.body.website) return bad(res, 401, 'Wrong email or password');
@@ -87,12 +90,14 @@ export async function createApp(opts = {}) {
     const email = str(req.body.email, 200).toLowerCase();
     const lk = crypto.createHash('sha256').update(email + '|' + ip).digest('hex'); const t = Date.now();
     const f = (fails.get(lk) || []).filter((x) => t - x < LOCK_MS);
-    if (f.length >= LOCK_N) return bad(res, 429, 'Too many attempts. Try again in 15 minutes.');
+    const ak = crypto.createHash('sha256').update('acct|' + email).digest('hex');
+    const af = (acctFails.get(ak) || []).filter((x) => t - x < LOCK_MS);
+    if (f.length >= LOCK_N || af.length >= ACCT_LOCK_N) return bad(res, 429, 'Too many attempts. Try again in 15 minutes.');
     const u = await db.get('SELECT * FROM users WHERE email=?', [email]);
     const pwOk = bcrypt.compareSync(String(req.body.password || ''), u ? u.password_hash : DUMMY_HASH);
-    if (!u || !pwOk) { f.push(t); fails.set(lk, f); return bad(res, 401, 'Wrong email or password'); }
+    if (!u || !pwOk) { f.push(t); fails.set(lk, f); af.push(t); acctFails.set(ak, af); return bad(res, 401, 'Wrong email or password'); }
     if (u.role === 'owner' && !(await ownerOk(req, u))) return bad(res, 403, 'Owner sign-in is only available through Cloudflare Access.');
-    fails.delete(lk);
+    fails.delete(lk); acctFails.delete(ak);
     const token = crypto.randomBytes(32).toString('hex');
     await db.run("INSERT INTO sessions(token,user_id,expires) VALUES(?,?,datetime('now','+14 days'))", [token, u.id]);
     res.json({ token, user: pubUser(u) });
@@ -239,6 +244,14 @@ export async function createApp(opts = {}) {
     if (!KEYS.includes(req.params.key)) return bad(res, 404, 'Unknown content key');
     const v = req.body.value; if (req.params.key === 'site' ? typeof v !== 'object' || Array.isArray(v) : !Array.isArray(v)) return bad(res, 400, 'Bad value');
     await db.run('INSERT INTO content(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [req.params.key, JSON.stringify(v)]); res.json({ ok: true });
+  }));
+
+  // Owner UI shell (/admin/) sits behind Cloudflare Access (QA r2 B2): without a valid Access JWT for an
+  // OWNER_EMAILS address it is a plain 404, so the shell isn't public even before the edge Access app exists.
+  app.use(wrap(async (req, res, next) => {
+    if (!/^\/admin(\/|\.html$|$)/i.test(req.path)) return next();
+    if (!(await verifyOwnerAccess(req))) { res.set('Cache-Control', 'no-store'); return res.status(404).type('text').send('Not found'); }
+    res.set('Cache-Control', 'no-store'); next();
   }));
 
   // --- static site (built by `npm run build`) ---

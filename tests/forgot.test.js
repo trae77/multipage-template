@@ -144,3 +144,21 @@ test('timing: forgot replies before any email work for known emails', async () =
   release(); await app.locals.settleForgot(); assert.equal(sent, 1);
   s.close(); fs.rmSync(d4, { recursive: true, force: true });
 });
+
+test('per-account lockout survives IP rotation (QA r2 P3)', async () => {
+  const codes = []; for (let i = 0; i < 11; i++) codes.push((await call('POST', '/api/auth/login', { email: 'rot@test.dev', password: 'bad', turnstile: 't' }, fresh())).status);
+  assert.deepEqual(codes, [...Array(10).fill(401), 429]);
+  assert.equal((await call('POST', '/api/auth/login', { email: CUST, password: 'wrong', turnstile: 't' }, fresh())).status, 401, 'other accounts unaffected');
+});
+
+test('/admin/ shell is 404 without Cloudflare Access, served with it (QA r2 B2)', async () => {
+  const d5 = fs.mkdtempSync(path.join(os.tmpdir(), 'mp-admin-')); const st = path.join(d5, 'dist'); fs.mkdirSync(path.join(st, 'admin'), { recursive: true });
+  fs.writeFileSync(path.join(st, 'admin', 'index.html'), 'ADMIN SHELL'); fs.writeFileSync(path.join(st, 'index.html'), 'HOME');
+  let allow = false;
+  const app = await createApp({ dataDir: d5, config: { business: { name: 'T' }, booking: {} }, staticDir: st, noRateLimit: true, verifyOwnerAccess: async () => (allow ? 'owner@test.dev' : null) });
+  const s = await new Promise((r) => { const x = app.listen(0, () => r(x)); }); const b = `http://127.0.0.1:${s.address().port}`;
+  for (const p of ['/admin', '/admin/', '/admin/index.html', '/ADMIN/', '/admin.html']) { const r = await fetch(b + p, { redirect: 'manual' }); assert.equal(r.status, 404, p); assert.ok(!(await r.text()).includes('ADMIN SHELL'), p); }
+  assert.equal((await fetch(b + '/')).status, 200, 'public pages unaffected');
+  allow = true; const r = await fetch(b + '/admin/'); assert.equal(r.status, 200); assert.match(await r.text(), /ADMIN SHELL/);
+  s.close(); fs.rmSync(d5, { recursive: true, force: true });
+});

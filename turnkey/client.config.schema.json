@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Turnkey client config",
-  "description": "Keys match Delivery's CLIENT-QUESTIONNAIRE-TEMPLATE.md exactly (18 + 4 added: brand.photos, forms.destination, forms.turnstileSiteKey, site.size). x-proposed keys are not yet in the questionnaire.",
+  "description": "x-q = question number in Delivery's CLIENT-QUESTIONNAIRE-TEMPLATE.md (Q1-Q21; Q16 maps to forms.destination + forms.notifyEmail, plus forms.turnstileSiteKey filled by TTA). x-proposed keys are not yet in the questionnaire.",
   "type": "object",
   "required": [
     "business",
@@ -116,7 +116,7 @@
             "one-page",
             "multi-page"
           ],
-          "x-q": 22
+          "x-q": 17
         }
       }
     },
@@ -130,7 +130,7 @@
           "type": "string",
           "maxLength": 200,
           "x-q": 10,
-          "description": "Filename inside --assets (or N)."
+          "description": "Q10. A filename inside --assets (png/jpg/webp/svg), or N for no logo. A share link is refused: download the file into --assets first and put its filename here."
         },
         "photos": {
           "type": "array",
@@ -139,7 +139,7 @@
             "maxLength": 200
           },
           "maxItems": 24,
-          "x-q": 19
+          "x-q": 15
         },
         "tagline": {
           "type": "string",
@@ -210,7 +210,7 @@
         "url": {
           "type": "string",
           "maxLength": 200,
-          "x-q": 15
+          "x-q": 18
         }
       }
     },
@@ -222,17 +222,17 @@
             "boolean",
             "string"
           ],
-          "x-q": 16
+          "x-q": 19
         },
         "changes": {
           "type": "string",
           "maxLength": 2000,
-          "x-q": 17
+          "x-q": 20
         },
         "missing": {
           "type": "string",
           "maxLength": 2000,
-          "x-q": 18
+          "x-q": 21
         }
       }
     },
@@ -245,13 +245,20 @@
             "owner-dashboard",
             "owner-dashboard+email"
           ],
-          "x-q": 20
+          "x-q": 16,
+          "description": "Q16 part 1: where leads go. owner-dashboard = /owner/ only; owner-dashboard+email = /owner/ plus an email copy to forms.notifyEmail."
         },
         "turnstileSiteKey": {
           "type": "string",
           "pattern": "^[0-9a-zA-Z_-]{10,64}$",
-          "description": "Set by TTA, not the client.",
-          "x-q": 21
+          "description": "Q16 (TTA fills): set by TTA, not the client.",
+          "x-q": 16
+        },
+        "notifyEmail": {
+          "type": "string",
+          "maxLength": 120,
+          "x-q": 16,
+          "description": "Q16 part 2: lead-copy email. Validated as an email by validateConfig (lib/schema.mjs); REQUIRED when destination is owner-dashboard+email, blank/absent for owner-dashboard. Written to Worker var LEAD_NOTIFY_EMAIL (not a secret)."
         }
       },
       "required": [

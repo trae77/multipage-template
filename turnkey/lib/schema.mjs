@@ -37,3 +37,15 @@ export function keyMap(schema, prefix = '', out = { q: [], proposed: [] }) {
   out.q.sort((a, b) => a[0] - b[0]);
   return out;
 }
+
+// Config-level rules the tiny validator can't express. forms.notifyEmail (Q16 email): validated by the schema (format email),
+// REQUIRED when forms.destination = owner-dashboard+email, optional (must be blank) for owner-dashboard. Brand.logo must be a filename or N.
+export function validateConfig(schema, cfg) {
+  const errs = validate(schema, cfg);
+  const ne = String(cfg?.forms?.notifyEmail || '').trim();
+  if (cfg?.forms?.destination === 'owner-dashboard+email' && !ne) errs.push('forms.notifyEmail: required when forms.destination is owner-dashboard+email (Q16 email address)');
+  if (ne && !EMAIL.test(ne)) errs.push('forms.notifyEmail: not an email');
+  if (cfg?.forms?.destination === 'owner-dashboard' && ne) errs.push('forms.notifyEmail: set but forms.destination is owner-dashboard (use owner-dashboard+email to send lead copies)');
+  if (/^(y(es)?\b|https?:)/i.test(String(cfg?.brand?.logo || '').trim())) errs.push('brand.logo: put the logo FILENAME from --assets (or N). For "Y + link", download the file into --assets first.');
+  return errs;
+}

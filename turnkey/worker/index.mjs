@@ -1,5 +1,6 @@
 // Turnkey client Worker (ported from Big Foot bigfoot-preview): static assets + POST /api/leads + owner API behind Cloudflare Access.
 // Env: ASSETS (static assets binding), DB (D1), TURNSTILE_SECRET (secret), OWNER_EMAILS (comma list),
+//      TURNSTILE_HOSTNAME (expected siteverify hostname), LEAD_NOTIFY_EMAIL (forms.notifyEmail),
 //      ACCESS_TEAM (https://<team>.cloudflareaccess.com), ACCESS_AUD (Access app AUD tag). Missing Access config => owner area 403 (fail closed).
 import { SECURITY_HEADERS } from '../lib/headers.mjs';
 
@@ -33,7 +34,14 @@ export function validateLead(body) {
 export async function turnstileOk(env, token, ip, fetchImpl = fetch) {
   if (!env.TURNSTILE_SECRET || !token || typeof token !== 'string' || token.length > 2048) return false; // fail closed
   const fd = new FormData(); fd.append('secret', env.TURNSTILE_SECRET); fd.append('response', token); if (ip) fd.append('remoteip', ip);
-  try { const r = await fetchImpl('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: fd }); const j = await r.json(); return !!(j && j.success); } catch { return false; }
+  try {
+    const r = await fetchImpl('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: fd }); const j = await r.json();
+    if (!(j && j.success === true)) return false;
+    // P3-2: the token must have been issued on THIS site. TURNSTILE_HOSTNAME is set by setup (<slug>-preview.ttawebdev.com); fail closed on mismatch.
+    const want = String(env.TURNSTILE_HOSTNAME || '').trim().toLowerCase();
+    if (want && String(j.hostname || '').toLowerCase() !== want) return false;
+    return true;
+  } catch { return false; }
 }
 
 export async function rateLimited(db, ip, limits = LEAD_LIMITS, now = Date.now()) {

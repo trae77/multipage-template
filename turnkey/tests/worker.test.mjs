@@ -62,3 +62,14 @@ test('public assets get security headers; robots disallows', async () => {
   assert.equal(r.headers.get('X-Robots-Tag'), 'noindex, nofollow'); assert.equal(r.headers.get('X-Frame-Options'), 'DENY');
   assert.match(await (await worker.fetch(new Request(ORIGIN + '/robots.txt'), env())).text(), /Disallow: \//);
 });
+
+test('P3-2: Turnstile token must come from TURNSTILE_HOSTNAME when set (fail closed)', async () => {
+  const { turnstileOk } = await import('../worker/index.mjs');
+  const ts = (hostname) => async () => new Response(JSON.stringify({ success: true, hostname }));
+  const env = { TURNSTILE_SECRET: 's', TURNSTILE_HOSTNAME: 'acme-test-co-preview.ttawebdev.com' };
+  assert.equal(await turnstileOk(env, 'tok', '1.2.3.4', ts('acme-test-co-preview.ttawebdev.com')), true);
+  assert.equal(await turnstileOk(env, 'tok', '1.2.3.4', ts('ACME-TEST-CO-PREVIEW.ttawebdev.com')), true);
+  assert.equal(await turnstileOk(env, 'tok', '1.2.3.4', ts('evil.example')), false);
+  assert.equal(await turnstileOk(env, 'tok', '1.2.3.4', ts(undefined)), false);
+  assert.equal(await turnstileOk({ TURNSTILE_SECRET: 's' }, 'tok', '1.2.3.4', ts('anything')), true); // unset = old behaviour (local tests only; setup always sets it)
+});

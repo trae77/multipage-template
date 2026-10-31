@@ -6,7 +6,7 @@ Set up a new client in 4 steps. Cost: $0 (Cloudflare free Workers + D1 + Turnsti
 2. **Run the questionnaire**: copy Delivery's answers into `my-client/answers.json` using the keys in `client.config.json` (they map 1:1 to `delivery/templates/CLIENT-QUESTIONNAIRE-TEMPLATE.md`, see the table below).
 3. **Run setup**: `npm ci --prefix turnkey && npx --prefix turnkey playwright install chromium`, then
    `npm run setup -- --answers my-client/answers.json --assets my-client/assets --dry-run`
-4. **Done**: when it prints `RESULT: PASS`, re-run without `--dry-run` to write `clients/<slug>/` (config, `dist/`, `wrangler.jsonc`). Deploy needs William's OK (see "Deploy").
+4. **Done**: when it prints `RESULT: PASS`, re-run without `--dry-run` to write `clients/<slug>/` (config, `dist/`, `wrangler.jsonc`, `worker/`). Setup builds in a temp folder next to it and moves it into place only when every check passes; on any FAIL nothing is written (an older good build stays as it was). Deploy needs William's OK (see "Deploy").
 
 `site.size` picks the layout: `one-page` (single page with anchors) or `multi-page` (Home, Services, Our work, Contact).
 
@@ -30,7 +30,7 @@ Setup and CI fail if any of these is missing or disabled:
 4. Per-IP rate limit (3/min, 10/hour, D1)
 5. Owner area locked: Access JWT verified + `OWNER_EMAILS` allow-list (dupes/empties fail closed)
 6. Demo dashboards `/demo/owner/` + `/demo/client/` (DEMO banner, Reset demo, noindex, no network calls; localStorage `tk-demo-v1:*`)
-7. Hidden logins: `SHOW_REAL_LOGINS=false`, `SHOW_DEMO_NAV=false` (`lib/flags.mjs`), no public link to /owner or /demo
+7. Hidden real login + preview demo menu: `SHOW_REAL_LOGINS=false` (no public link to /owner), `SHOW_DEMO_NAV=true` so every public page's main menu shows "Owner demo" + "Client demo" (William via CEO, Oct 30: "always add them for previews")
 8. Forgot-password reset wherever a password login exists. The owner login is Access email code (no password), so this is N/A today; it becomes enforced the moment a password login is added (feat/forgot-login).
 
 ## Features
@@ -56,4 +56,8 @@ wrangler d1 migrations apply <slug>-preview --remote --config clients/<slug>/wra
 `--deploy` refuses when any check failed, the Turnstile key is a Cloudflare test key, env is missing, or `TURNKEY_DEPLOY_OK` is not `yes`. Record the previous version id for rollback (`wrangler deployments list`).
 
 ## Questionnaire key map
-Keys 1-18 and 19-22 match Delivery's template exactly. Proposed additions (optional, not in the questionnaire yet): `business.licenseInsured`, `brand.tagline`, `brand.primaryColor`.
+`x-q` in the schema = the question number in Delivery's template (Q1-Q21, same order). Q15 `brand.photos`, Q17 `site.size`, Q18-21 preview/feedback.
+- **Q10 logo**: the client answers "Y + link"; TTA downloads the file into `assets/` and puts its **filename** in `brand.logo` (or `N`). A link or "Y" is refused by setup.
+- **Q16 leads**: `forms.destination` = `owner-dashboard` (leads only in /owner/) or `owner-dashboard+email`; with `+email`, the address the client wrote goes in **`forms.notifyEmail`** (validated email, required for `+email`, must be blank otherwise). Setup writes it to the Worker var `LEAD_NOTIFY_EMAIL`. `forms.turnstileSiteKey` is filled by TTA. Suggested Delivery wording: "Where should new leads go? (a) your owner dashboard only (b) dashboard + a copy by email to: ____".
+- **Turnstile**: setup sets `TURNSTILE_HOSTNAME=<slug>-preview.ttawebdev.com`; the Worker rejects tokens issued for any other hostname.
+- **Standards**: `qa/qa-gate.sh`, `qa/d2-render.mjs`, `qa/demo-nav-render.mjs`, `qa/menu-shots.mjs`, `qa/DEFINITION-OF-DONE.md` are copies of `/workspace/ops/standards`, pinned in `qa/standards.lock.json`. Never edit them here: change ops, then `npm run standards:sync`. `npm test` (and CI) runs `standards:check`, which fails on any drift. Proposed additions (optional, not in the questionnaire yet): `business.licenseInsured`, `brand.tagline`, `brand.primaryColor`.

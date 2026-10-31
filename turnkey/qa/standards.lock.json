@@ -1,0 +1,11 @@
+{
+  "source": "ops/standards",
+  "syncedAt": "2026-10-30T23:48:20.127Z",
+  "files": {
+    "qa-gate.sh": "0c528777cad9ecfebf9b612b4273d3e4b540bf2b0d5f0e907f39d68ffa66727d",
+    "d2-render.mjs": "456deee5ba8d3f0728cc15efe54d1b80aa40c301ec8f35bea621a009975173bd",
+    "demo-nav-render.mjs": "a34e6da699b08b74d989d881dc2c5ff89d5b57fb6468ab128198acbe1e397c3d",
+    "menu-shots.mjs": "978c70ce031e3aa54bd9348af497a1268f7219f8c0b651670c6f7da43a317a1a",
+    "DEFINITION-OF-DONE.md": "6ae7ff7062d99416a6d9efbcabd0efce59aebca3b67214f16e09c8c766101906"
+  }
+}

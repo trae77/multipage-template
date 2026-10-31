@@ -11,5 +11,5 @@
   "payment": { "link": "" },
   "preview": { "url": "" },
   "feedback": { "approved": "", "changes": "", "missing": "" },
-  "forms": { "destination": "owner-dashboard", "turnstileSiteKey": "" }
+  "forms": { "destination": "owner-dashboard", "notifyEmail": "", "turnstileSiteKey": "" }
 }

@@ -27,7 +27,8 @@ export function loginGate(dist) {
     ['forms: per-IP rate limit', /await rateLimited\(env\.DB, ip\)/.test(w) && /perMinute: \d+, perHour: \d+/.test(w)],
     ['owner login: Access JWT verified + OWNER_EMAILS allow-list', /verifyAccessJwt\(req\.headers\.get\('Cf-Access-Jwt-Assertion'\)/.test(w) && /ownerAllowed\(id, env\)/.test(w) && /isProtected\(norm\)/.test(w) && fs.existsSync(path.join(dist, 'owner/index.html'))],
     ['demo dashboards: /demo/owner/ + /demo/client/ (banner, Reset, noindex, no network)', demoOk('owner') && demoOk('client') && demoJs && !/fetch\(|XMLHttpRequest|sendBeacon/.test(demoJs)],
-    ['hidden logins: SHOW_REAL_LOGINS=false, SHOW_DEMO_NAV=false, no public links to /owner or /demo', flags.SHOW_REAL_LOGINS === false && flags.SHOW_DEMO_NAV === false && !/href="\/(owner|demo)\b/.test(pubText)],
+    ['hidden real login + preview demo menu: SHOW_REAL_LOGINS=false, no public link to /owner; SHOW_DEMO_NAV=true and every public page main menu has Owner demo + Client demo', flags.SHOW_REAL_LOGINS === false && flags.SHOW_DEMO_NAV === true && !/href="\/owner\b/.test(pubText)
+      && pub.length > 0 && pub.every((f) => { const n = (read(f).match(/<nav aria-label="Main">([\s\S]*?)<\/nav>/) || [])[1] || ''; return /href="\/demo\/owner\/">Owner demo</.test(n) && /href="\/demo\/client\/">Client demo</.test(n); })],
     ['forgot-password reset present wherever a password login exists', !passwordLogin || forgot],
   ];
   const errs = checks.filter(([, ok]) => !ok).map(([n]) => n);

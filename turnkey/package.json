@@ -4,9 +4,11 @@
   "type": "module",
   "scripts": {
     "setup": "node setup.mjs",
-    "test": "node --test tests/*.test.mjs",
+    "test": "node qa/sync-standards.mjs --check && node --test tests/*.test.mjs",
     "dry-run:acme": "node setup.mjs --answers fixtures/acme/answers.json --assets fixtures/acme/assets --dry-run",
-    "qa-gate": "node qa/run-gate.mjs"
+    "qa-gate": "node qa/run-gate.mjs",
+    "standards:check": "node qa/sync-standards.mjs --check",
+    "standards:sync": "node qa/sync-standards.mjs --from /workspace/ops/standards"
   },
   "engines": {
     "node": ">=20"

@@ -44,16 +44,17 @@ function leadForm(cfg) {
 function page(cfg, { title, body, nav, depth = 0, extraHead = '', turnstile = false }) {
   const up = depth ? '../'.repeat(depth) : './';
   const logo = cfg._logoFile ? `<img src="/assets/${esc(cfg._logoFile)}" alt="${esc(cfg.business.name)} logo" width="40" height="40">` : '';
-  const footLinks = [SHOW_REAL_LOGINS ? '<a href="/owner/">Owner login</a>' : '', SHOW_DEMO_NAV ? '<a href="/demo/owner/">Owner demo</a> <a href="/demo/client/">Client demo</a>' : ''].filter(Boolean).join(' · ');
+  const footLinks = SHOW_REAL_LOGINS ? '<a href="/owner/">Owner login</a>' : '';
+  const demoNav = SHOW_DEMO_NAV ? '<a href="/demo/owner/">Owner demo</a><a href="/demo/client/">Client demo</a>' : '';
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow"><title>${esc(title)}</title>
 <meta name="description" content="${esc(cfg.business.name)}: ${esc(cfg.business.trade)} serving ${esc(cfg.location.serviceArea)}.">
-<link rel="stylesheet" href="/site.css">${extraHead}</head>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/site.css">${extraHead}</head>
 <body${cfg.features.chat ? ' data-chat="on"' : ''}>
 <a class="skip" href="#main">Skip to content</a>
 <header class="top"><a class="brand" href="/">${logo}<span>${esc(cfg.business.name)}</span></a>
-<nav aria-label="Main">${nav}</nav>
+<nav aria-label="Main">${nav}${demoNav}</nav>
 <a class="btn call" href="${telHref(cfg.contact.phone)}">Call ${esc(cfg.contact.phone)}</a></header>
 <main id="main">${body}</main>
 <footer><p><strong>${esc(cfg.business.name)}</strong> · ${esc(cfg.business.trade)} · ${esc(cfg.location.serviceArea)}</p>
@@ -78,6 +79,13 @@ const sections = {
   pay: (c) => `<section id="pay" class="card"><h2>Payments</h2>${paymentBlock(c.payment.link)}</section>`,
 };
 
+// P3-4: every page links a favicon (brand-colour tile + first letter); no more /favicon.ico 404s.
+export function favicon(cfg) {
+  const color = /^#[0-9a-fA-F]{6}$/.test(cfg.brand.primaryColor || '') ? cfg.brand.primaryColor : '#1f4e79';
+  const letter = esc((String(cfg.business.name).match(/[A-Za-z0-9]/) || ['T'])[0].toUpperCase());
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="${color}"/><text x="32" y="44" font-family="Arial,sans-serif" font-size="36" font-weight="700" text-anchor="middle" fill="#fff">${letter}</text></svg>\n`;
+}
+
 export function render(cfg) {
   const files = {};
   const size = cfg.site.size;
@@ -96,6 +104,7 @@ export function render(cfg) {
     files['index.html'] = page(cfg, { title: `${cfg.business.name} | ${cfg.business.trade}`, body, nav, turnstile: true });
   }
   files['404.html'] = page(cfg, { title: `Not found | ${cfg.business.name}`, body: '<section class="card"><h1>Page not found</h1><p><a href="/">Back to home</a></p></section>', nav: '<a href="/">Home</a>' });
+  files['favicon.svg'] = favicon(cfg);
   files['robots.txt'] = 'User-agent: *\nDisallow: /\n';
   files['_headers'] = headersFile();
   const color = cfg.brand.primaryColor || '#1f4e79';

@@ -1,0 +1,270 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Turnkey client config",
+  "description": "x-q = question number in Delivery's CLIENT-QUESTIONNAIRE-TEMPLATE.md (Q1-Q21; Q16 maps to forms.destination + forms.notifyEmail, plus forms.turnstileSiteKey filled by TTA). x-proposed keys are not yet in the questionnaire.",
+  "type": "object",
+  "required": [
+    "business",
+    "contact",
+    "location",
+    "hours",
+    "site",
+    "brand",
+    "services",
+    "features",
+    "owner",
+    "payment",
+    "preview",
+    "feedback",
+    "forms"
+  ],
+  "properties": {
+    "business": {
+      "type": "object",
+      "required": [
+        "name",
+        "owner",
+        "trade"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80,
+          "x-q": 1
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80,
+          "x-q": 2
+        },
+        "trade": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60,
+          "x-q": 3
+        },
+        "licenseInsured": {
+          "type": "string",
+          "maxLength": 120,
+          "x-proposed": true
+        }
+      }
+    },
+    "contact": {
+      "type": "object",
+      "required": [
+        "phone",
+        "email"
+      ],
+      "properties": {
+        "phone": {
+          "type": "string",
+          "pattern": "^\\(\\d{3}\\) \\d{3}-\\d{4}$",
+          "x-q": 4
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 120,
+          "x-q": 5
+        }
+      }
+    },
+    "location": {
+      "type": "object",
+      "required": [
+        "serviceArea"
+      ],
+      "properties": {
+        "mapAddress": {
+          "type": "string",
+          "maxLength": 160,
+          "x-q": 6,
+          "description": "Optional; blank = service-area-only, no map."
+        },
+        "serviceArea": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 300,
+          "x-q": 7
+        }
+      }
+    },
+    "hours": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 120,
+      "x-q": 8
+    },
+    "site": {
+      "type": "object",
+      "required": [
+        "domain",
+        "size"
+      ],
+      "properties": {
+        "domain": {
+          "type": "string",
+          "maxLength": 100,
+          "x-q": 9
+        },
+        "size": {
+          "type": "string",
+          "enum": [
+            "one-page",
+            "multi-page"
+          ],
+          "x-q": 17
+        }
+      }
+    },
+    "brand": {
+      "type": "object",
+      "required": [
+        "logo"
+      ],
+      "properties": {
+        "logo": {
+          "type": "string",
+          "maxLength": 200,
+          "x-q": 10,
+          "description": "Q10. A filename inside --assets (png/jpg/webp/svg), or N for no logo. A share link is refused: download the file into --assets first and put its filename here."
+        },
+        "photos": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "maxItems": 24,
+          "x-q": 15
+        },
+        "tagline": {
+          "type": "string",
+          "maxLength": 140,
+          "x-proposed": true
+        },
+        "primaryColor": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "x-proposed": true
+        }
+      }
+    },
+    "services": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 30,
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 80
+      },
+      "x-q": 11
+    },
+    "features": {
+      "type": "object",
+      "required": [
+        "chat"
+      ],
+      "properties": {
+        "chat": {
+          "type": "boolean",
+          "x-q": 12
+        }
+      }
+    },
+    "owner": {
+      "type": "object",
+      "required": [
+        "loginEmail"
+      ],
+      "properties": {
+        "loginEmail": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 120,
+          "x-q": 13
+        }
+      }
+    },
+    "payment": {
+      "type": "object",
+      "required": [
+        "link"
+      ],
+      "properties": {
+        "link": {
+          "type": "string",
+          "maxLength": 200,
+          "x-q": 14,
+          "description": "https Stripe Payment Link or a public Zelle handle; blank = 'Payment link pending'."
+        }
+      }
+    },
+    "preview": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "maxLength": 200,
+          "x-q": 18
+        }
+      }
+    },
+    "feedback": {
+      "type": "object",
+      "properties": {
+        "approved": {
+          "type": [
+            "boolean",
+            "string"
+          ],
+          "x-q": 19
+        },
+        "changes": {
+          "type": "string",
+          "maxLength": 2000,
+          "x-q": 20
+        },
+        "missing": {
+          "type": "string",
+          "maxLength": 2000,
+          "x-q": 21
+        }
+      }
+    },
+    "forms": {
+      "type": "object",
+      "properties": {
+        "destination": {
+          "type": "string",
+          "enum": [
+            "owner-dashboard",
+            "owner-dashboard+email"
+          ],
+          "x-q": 16,
+          "description": "Q16 part 1: where leads go. owner-dashboard = /owner/ only; owner-dashboard+email = /owner/ plus an email copy to forms.notifyEmail."
+        },
+        "turnstileSiteKey": {
+          "type": "string",
+          "pattern": "^[0-9a-zA-Z_-]{10,64}$",
+          "description": "Q16 (TTA fills): set by TTA, not the client.",
+          "x-q": 16
+        },
+        "notifyEmail": {
+          "type": "string",
+          "maxLength": 120,
+          "x-q": 16,
+          "description": "Q16 part 2: lead-copy email. Validated as an email by validateConfig (lib/schema.mjs); REQUIRED when destination is owner-dashboard+email, blank/absent for owner-dashboard. Written to Worker var LEAD_NOTIFY_EMAIL (not a secret)."
+        }
+      },
+      "required": [
+        "destination",
+        "turnstileSiteKey"
+      ]
+    }
+  }
+}

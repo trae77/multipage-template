@@ -13,7 +13,9 @@
     "test:e2e": "npm run build:demo && npm run audit:industry && node tests/smoke.mjs && node tests/a11y.mjs",
     "screenshots": "npm run build:demo && node tests/screenshots.mjs",
     "audit:industry": "node tools/audit-industry.mjs",
-    "test:a11y": "node tests/a11y.mjs"
+    "test:a11y": "node tests/a11y.mjs",
+    "setup": "node turnkey/setup.mjs",
+    "test:turnkey": "npm test --prefix turnkey"
   },
   "license": "ISC",
   "type": "module",

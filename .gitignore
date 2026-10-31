@@ -5,3 +5,7 @@ dist/
 test-results/
 dist-demo/
 mock-sent.jsonl
+
+# turnkey
+turnkey/node_modules/
+clients/*/dist/

@@ -1,0 +1,15 @@
+{
+  "business": { "name": "TODO business name", "owner": "TODO owner name", "trade": "TODO trade" },
+  "contact": { "phone": "(000) 000-0000", "email": "owner@example.com" },
+  "location": { "mapAddress": "", "serviceArea": "TODO towns or radius" },
+  "hours": "TODO hours",
+  "site": { "domain": "need one", "size": "multi-page" },
+  "brand": { "logo": "N", "photos": [], "tagline": "", "primaryColor": "#1f4e79" },
+  "services": ["TODO service"],
+  "features": { "chat": false },
+  "owner": { "loginEmail": "owner@example.com" },
+  "payment": { "link": "" },
+  "preview": { "url": "" },
+  "feedback": { "approved": "", "changes": "", "missing": "" },
+  "forms": { "destination": "owner-dashboard", "notifyEmail": "", "turnstileSiteKey": "" }
+}

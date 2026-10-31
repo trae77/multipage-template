@@ -43,3 +43,10 @@ Nothing is "done", "QA PASS", or "ready for William" unless every applicable box
 
 ## Preview demo links (William, relayed by CEO 2026-10-30 5:35 PM)
 "always add them for previews. We want the clients to preview everything" -- Every client preview site shows Owner demo and Client demo links in its main menu by default. The real /owner/ stays Access-locked and out of the menu. QA FAILs any preview missing either demo link or exposing /owner/ in the menu.
+
+## Parallel multi-client delivery (STANDING)
+"we want to be able to complete multiple clients at once quickly and efficiently" / "make this standing rule" (William, via CEO, 2026-10-30 5:56 PM). Also: "get everyone on it" / "always do this" (5:54 PM).
+- Run multiple clients at once in parallel lanes built from shared templates and reusable feature modules (model: /workspace/utime-build/CONTRACT.md plug-in contract).
+- Every build is split across all capable bots at once; fastest clickable demo first, then polish.
+- Every client fix is upstreamed to the templates (see UPSTREAM-RULE.md).
+- All holds, security rules and the qa-gate.sh PASS still apply per PR.

@@ -157,8 +157,40 @@ test('/admin/ shell is 404 without Cloudflare Access, served with it (QA r2 B2)'
   let allow = false;
   const app = await createApp({ dataDir: d5, config: { business: { name: 'T' }, booking: {} }, staticDir: st, noRateLimit: true, verifyOwnerAccess: async () => (allow ? 'owner@test.dev' : null) });
   const s = await new Promise((r) => { const x = app.listen(0, () => r(x)); }); const b = `http://127.0.0.1:${s.address().port}`;
-  for (const p of ['/admin', '/admin/', '/admin/index.html', '/ADMIN/', '/admin.html']) { const r = await fetch(b + p, { redirect: 'manual' }); assert.equal(r.status, 404, p); assert.ok(!(await r.text()).includes('ADMIN SHELL'), p); }
+  const http = await import('node:http');
+  const raw = (p) => new Promise((ok, no) => { http.get({ host: '127.0.0.1', port: s.address().port, path: p }, (r) => { let d = ''; r.on('data', (c) => d += c); r.on('end', () => ok({ status: r.statusCode, cc: r.headers['cache-control'], body: d })); }).on('error', no); });
+  for (const p of ['/admin', '/admin/', '/admin/index.html', '/ADMIN/', '/admin.html', '//admin/', '/%61dmin/', '/%2Fadmin/', '/admin%2findex.html', '/./admin/', '/x/../admin/', '/%252Fadmin/', '/admin/%2e%2e/admin/']) {
+    const r = await raw(p); assert.equal(r.status, 404, p); assert.equal(r.cc, 'no-store', p + ' no-store'); assert.ok(!r.body.includes('ADMIN SHELL'), p); }
+  for (const p of ['/admin;/', '/admin;x/', '/;/admin/', '/admin%00/', '/admin%3b/', '/%2561dmin/', '/admin%5c']) { const r = await raw(p); assert.equal(r.status, 404, p); assert.ok(!r.body.includes('ADMIN SHELL'), p); }
+  for (const p of ['/admin%zz/', '/%E0%A4%A/admin/']) { const r = await raw(p); assert.equal(r.status, 400, p); assert.ok(!r.body.includes('ADMIN SHELL'), p); }
   assert.equal((await fetch(b + '/')).status, 200, 'public pages unaffected');
-  allow = true; const r = await fetch(b + '/admin/'); assert.equal(r.status, 200); assert.match(await r.text(), /ADMIN SHELL/);
+  allow = true; const r = await fetch(b + '/admin/'); assert.equal(r.status, 200); assert.equal(r.headers.get('cache-control'), 'no-store'); assert.match(await r.text(), /ADMIN SHELL/);
+  assert.equal((await raw('/%61dmin/')).status, 200, 'encoded path served only via the Access handler');
   s.close(); fs.rmSync(d5, { recursive: true, force: true });
+});
+
+test('lockout never blocks an Access-verified owner; lock events are logged (QA r3 P2b)', async () => {
+  const warns = []; const ow = console.warn; console.warn = (...a) => warns.push(a.join(' '));
+  try {
+    const codes = []; for (let i = 0; i < 11; i++) codes.push((await call('POST', '/api/auth/login', { email: 'owner@test.dev', password: 'bad', turnstile: 't' }, fresh())).status);
+    assert.equal(codes.at(-1), 401, 'Access-matched owner is not locked (still 401 on bad password)');
+    assert.equal((await call('POST', '/api/auth/login', { email: 'owner@test.dev', password: 'owner-pass-1', turnstile: 't' }, fresh())).status, 200);
+    assert.ok(warns.some((w) => w.includes('lockout bypassed for Access-verified owner')));
+    for (let i = 0; i < 11; i++) await call('POST', '/api/auth/login', { email: 'victim@test.dev', password: 'bad', turnstile: 't' }, fresh());
+    assert.ok(warns.some((w) => w.includes('lockout triggered')));
+    assert.ok(!warns.join('\n').includes('victim@test.dev'), 'no raw email in logs');
+  } finally { console.warn = ow; }
+});
+
+test('in-memory counters are size-capped; limiter keys on CF-Connecting-IP (QA r3 P3)', async () => {
+  const d6 = fs.mkdtempSync(path.join(os.tmpdir(), 'mp-cap-'));
+  const app = await createApp({ dataDir: d6, config: { business: { name: 'T' }, booking: {} }, staticDir: path.join(d6, 'none'), loginTurnstile: false, mapCap: 50, verifyOwnerAccess: async () => null });
+  const s = await new Promise((r) => { const x = app.listen(0, () => r(x)); }); const b = `http://127.0.0.1:${s.address().port}`;
+  const L = (ip, email) => fetch(b + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip }, body: JSON.stringify({ email, password: 'x' }) });
+  for (let i = 0; i < 120; i++) await L(`10.20.${i >> 8}.${i & 255}`, `u${i}@t.dev`);
+  const z = app.locals.counterSizes(); assert.ok(z.hits <= 50 && z.fails <= 50 && z.acctFails <= 50, JSON.stringify(z));
+  const codes = []; for (let i = 0; i < 11; i++) codes.push((await L('10.30.0.1', `k${i}@t.dev`)).status);
+  assert.equal(codes.at(-1), 429, 'same CF-Connecting-IP is limited');
+  assert.equal((await L('10.30.0.2', 'k@t.dev')).status, 401, 'different CF-Connecting-IP is not');
+  s.close(); fs.rmSync(d6, { recursive: true, force: true });
 });

@@ -59,8 +59,14 @@ export async function createApp(opts = {}) {
   const str = (v, max = 2000) => String(v ?? '').trim().slice(0, max);
 
   // tiny in-memory rate limiter for public endpoints
+  // In-memory counters are size-capped (oldest-touched evicted first) so a flood of keys can't exhaust memory (QA r3 P3).
+  const MAP_CAP = opts.mapCap || 10000;
+  const capSet = (m, k, v) => { m.delete(k); m.set(k, v); while (m.size > MAP_CAP) m.delete(m.keys().next().value); };
+  // Client IP: Cloudflare's CF-Connecting-IP, else the socket address (never X-Forwarded-For, which is client-set).
+  const clientIp = (req) => String(req.headers['cf-connecting-ip'] || req.socket?.remoteAddress || '').slice(0, 64);
+  app.locals.counterSizes = () => ({ hits: hits.size, fails: fails.size, acctFails: acctFails.size });
   const hits = new Map();
-  const limit = (n, ms) => (req, res, next) => { if (opts.noRateLimit) return next(); const k = req.ip + req.path; const t = Date.now(); const a = (hits.get(k) || []).filter((x) => t - x < ms); a.push(t); hits.set(k, a); a.length > n ? bad(res, 429, 'Too many requests, try again later') : next(); };
+  const limit = (n, ms) => (req, res, next) => { if (opts.noRateLimit) return next(); const k = clientIp(req) + '|' + req.path; const t = Date.now(); const a = (hits.get(k) || []).filter((x) => t - x < ms); a.push(t); capSet(hits, k, a); a.length > n ? bad(res, 429, 'Too many requests, try again later') : next(); };
 
   // --- auth ---
   const auth = (role) => wrap(async (req, res, next) => {
@@ -84,7 +90,7 @@ export async function createApp(opts = {}) {
   // trivially lock a real user out; Turnstile still applies on every try.
   const acctFails = new Map(); const ACCT_LOCK_N = opts.acctLockN || 10;
   app.post('/api/auth/login', limit(10, 60000), wrap(async (req, res) => {
-    const ip = req.headers['cf-connecting-ip'] || req.ip || '';
+    const ip = clientIp(req);
     if (typeof req.body.website === 'string' && req.body.website) return bad(res, 401, 'Wrong email or password');
     if (loginTurnstile && !(await turnstileOk(loginTurnstileSecret, req.body.turnstile, ip, opts.fetchImpl || fetch))) return bad(res, 403, 'Please complete the human check and try again.');
     const email = str(req.body.email, 200).toLowerCase();
@@ -92,11 +98,18 @@ export async function createApp(opts = {}) {
     const f = (fails.get(lk) || []).filter((x) => t - x < LOCK_MS);
     const ak = crypto.createHash('sha256').update('acct|' + email).digest('hex');
     const af = (acctFails.get(ak) || []).filter((x) => t - x < LOCK_MS);
-    if (f.length >= LOCK_N || af.length >= ACCT_LOCK_N) return bad(res, 429, 'Too many attempts. Try again in 15 minutes.');
+    // Access is checked first (QA r3 P2b): an Access-verified owner signing in as themself is never locked out by
+    // attackers spraying their email; every lock decision is logged (hashed key only, no email/IP).
+    const accessEmail = await verifyOwnerAccess(req);
+    const ownerViaAccess = !!accessEmail && accessEmail === email;
+    if (f.length >= LOCK_N || af.length >= ACCT_LOCK_N) {
+      if (ownerViaAccess) console.warn('[login] lockout bypassed for Access-verified owner', ak.slice(0, 12));
+      else { console.warn('[login] lockout triggered', ak.slice(0, 12), f.length >= LOCK_N ? 'email+ip' : 'account'); return bad(res, 429, 'Too many attempts. Try again in 15 minutes.'); }
+    }
     const u = await db.get('SELECT * FROM users WHERE email=?', [email]);
     const pwOk = bcrypt.compareSync(String(req.body.password || ''), u ? u.password_hash : DUMMY_HASH);
-    if (!u || !pwOk) { f.push(t); fails.set(lk, f); af.push(t); acctFails.set(ak, af); return bad(res, 401, 'Wrong email or password'); }
-    if (u.role === 'owner' && !(await ownerOk(req, u))) return bad(res, 403, 'Owner sign-in is only available through Cloudflare Access.');
+    if (!u || !pwOk) { f.push(t); capSet(fails, lk, f); af.push(t); capSet(acctFails, ak, af); return bad(res, 401, 'Wrong email or password'); }
+    if (u.role === 'owner' && !(ownerViaAccess && accessEmail === String(u.email).toLowerCase())) return bad(res, 403, 'Owner sign-in is only available through Cloudflare Access.');
     fails.delete(lk); acctFails.delete(ak);
     const token = crypto.randomBytes(32).toString('hex');
     await db.run("INSERT INTO sessions(token,user_id,expires) VALUES(?,?,datetime('now','+14 days'))", [token, u.id]);
@@ -246,17 +259,36 @@ export async function createApp(opts = {}) {
     await db.run('INSERT INTO content(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [req.params.key, JSON.stringify(v)]); res.json({ ok: true });
   }));
 
-  // Owner UI shell (/admin/) sits behind Cloudflare Access (QA r2 B2): without a valid Access JWT for an
-  // OWNER_EMAILS address it is a plain 404, so the shell isn't public even before the edge Access app exists.
+  // Owner UI shell (/admin/) is served ONLY by this handler, behind Cloudflare Access + OWNER_EMAILS (QA r2 B2, r3 P2a).
+  // The public static handler never sees dist/admin: paths are decoded (repeatedly), backslashes/duplicate slashes
+  // collapsed and dot-segments resolved before matching, so //admin/, /%61dmin/, /%2Fadmin/, /admin%2findex.html and
+  // /./admin/ all route here. No Access -> plain 404, no-store.
+  const dist = opts.staticDir || path.join(ROOT, 'dist');
+  const adminDir = path.join(dist, 'admin');
+  const normPath = (raw) => {
+    let p = String(raw || '/').split('?')[0];
+    for (let i = 0; i < 5; i++) { let d; try { d = decodeURIComponent(p); } catch { return null; } if (d === p) break; p = d; }
+    p = p.replace(/\0/g, '').replace(/;[^/]*/g, '').replace(/\\/g, '/').replace(/\/{2,}/g, '/');
+    return path.posix.normalize('/' + p).toLowerCase();
+  };
+  const isAdmin = (n) => n === null || n === '/admin' || n.startsWith('/admin/') || n === '/admin.html' || n.startsWith('/admin.');
+  const notFound = (res) => res.set('Cache-Control', 'no-store').status(404).type('text').send('Not found');
   app.use(wrap(async (req, res, next) => {
-    if (!/^\/admin(\/|\.html$|$)/i.test(req.path)) return next();
-    if (!(await verifyOwnerAccess(req))) { res.set('Cache-Control', 'no-store'); return res.status(404).type('text').send('Not found'); }
-    res.set('Cache-Control', 'no-store'); next();
+    const n = normPath(req.originalUrl || req.url);
+    if (!isAdmin(n)) return next();
+    if (n === null) return res.set('Cache-Control', 'no-store').status(400).type('text').send('Bad request');
+    if (!(await verifyOwnerAccess(req))) return notFound(res);
+    let rel = n === '/admin' || n === '/admin.html' ? 'index.html' : n.slice('/admin/'.length) || 'index.html';
+    if (rel.endsWith('/')) rel += 'index.html';
+    const file = path.resolve(adminDir, rel), file2 = file + '.html';
+    if (!file.startsWith(adminDir + path.sep)) return notFound(res);
+    const pick = [file, file2, path.join(file, 'index.html')].find((f) => f.startsWith(adminDir + path.sep) && fs.existsSync(f) && fs.statSync(f).isFile());
+    if (!pick) return notFound(res);
+    res.set('Cache-Control', 'no-store'); res.sendFile(pick);
   }));
 
-  // --- static site (built by `npm run build`) ---
-  const dist = opts.staticDir || path.join(ROOT, 'dist');
-  if (fs.existsSync(dist)) app.use(express.static(dist, { extensions: ['html'], maxAge: '1h' }));
+  // --- static site (built by `npm run build`) --- (admin/ excluded above; also refused here as a backstop)
+  if (fs.existsSync(dist)) app.use((req, res, next) => (isAdmin(normPath(req.originalUrl || req.url)) ? notFound(res) : next()), express.static(dist, { extensions: ['html'], maxAge: '1h' }));
   app.use('/api', (_req, res) => bad(res, 404, 'Not found'));
   app.use((err, _req, res, _next) => { const code = err.status || (err.code === 'LIMIT_FILE_SIZE' ? 413 : 500); if (code === 500) console.error(err); bad(res, code, code === 500 ? 'Server error' : err.message); });
   app.locals.db = db;
